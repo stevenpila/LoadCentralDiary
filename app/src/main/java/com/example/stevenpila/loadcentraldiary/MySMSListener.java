@@ -34,8 +34,10 @@ public class MySMSListener extends BroadcastReceiver {
 
                     String msgBody = smsMessage.getMessageBody().toString();
                     String msgSrc = smsMessage.getOriginatingAddress();
+                    String newMsgSrc = getAlternateNumber(msgSrc);
 
-                    if(accessNumbers.contains(getAlternateNumber(msgSrc)))
+                    MyUtility.showToast(arg0, msgSrc + " to " + newMsgSrc, MyUtility.ToastLength.SHORT);
+                    if(accessNumbers.contains(newMsgSrc))
                         processMessage(arg0, msgBody);
                     else {
                         messageStr += "IGNORED: SMS from " + msgSrc + " : " + msgBody;
@@ -63,8 +65,10 @@ public class MySMSListener extends BroadcastReceiver {
 
                 if(id > -1) {
                     if(databaseHandler.setValidSellLoad((int) id)) {
-                        HomeActivity.getInstance().setValidSellLoad((int) id);
-                        MyUtility.showToast(context, "Successfully validated. " + clientNumber + ":" + clientProduct, MyUtility.ToastLength.LONG);
+                        if(HomeActivity.getInstance() != null) {
+                            HomeActivity.getInstance().setValidSellLoad((int) id);
+                            MyUtility.showToast(context, "Successfully validated. " + clientNumber + ":" + clientProduct, MyUtility.ToastLength.LONG);
+                        }
                     }
                     else
                         MyUtility.showToast(context, "Failed to validate. " + clientNumber + ":" + clientProduct, MyUtility.ToastLength.LONG);
@@ -93,7 +97,7 @@ public class MySMSListener extends BroadcastReceiver {
     private String getAlternateNumber(String number) {
         String alternateNumber = number;
 
-        if(number.indexOf("+63") > -1) {
+        if(number.substring(0, 3).equals("+63")) {
             alternateNumber = "0" + number.substring(3);
         }
 

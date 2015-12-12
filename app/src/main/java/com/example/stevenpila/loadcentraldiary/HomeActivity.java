@@ -36,7 +36,7 @@ public class HomeActivity extends AppCompatActivity
 
     private DatabaseHandler m_dbHandler;
 
-    private static HomeActivity m_homeActivityInstance;
+    private static HomeActivity m_homeActivityInstance = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -251,11 +251,7 @@ public class HomeActivity extends AppCompatActivity
             SoldLoadInfo soldLoadInfo = listViewAdapter.getItem(i);
 
             if(soldLoadInfo.m_id == id) {
-                ((SoldLoadInfo) listViewAdapter.getItem(i)).m_isValidated = true;
-
-                View view = listViewAdapter.getView(i, null, m_listView);
-                ImageView validImage = (ImageView) view.findViewById(R.id.homeListViewItemValidImage);
-                validImage.setBackgroundColor(getResources().getColor(R.color.colorGreen));
+                listViewAdapter.getItem(i).m_isValidated = true;
                 listViewAdapter.notifyDataSetChanged();
                 break;
             }
