@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:showIn="@layout/activity_add_phonebook"
+    tools:context="com.example.stevenpila.loadcentraldiary.AddPhonebookActivity">
+
+    <com.example.stevenpila.loadcentraldiary.MyEditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:ems="10"
+        android:id="@+id/addPhonebookNameEditText"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:hint="Name" />
+
+    <com.example.stevenpila.loadcentraldiary.MyEditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="10"
+        android:id="@+id/addPhonebookNumberEditText"
+        android:layout_below="@+id/addPhonebookNameEditText"
+        android:layout_alignParentStart="true"
+        android:hint="Number"
+        android:layout_marginTop="5dp" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/addPhonebookNumberEditText"
+        android:layout_alignParentStart="true">
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_save"
+            android:id="@+id/addPhonebookSubmitBtn"
+            android:layout_weight="1"
+            android:onClick="PhonebookSubmitButtonOnClick" />
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_clear"
+            android:id="@+id/addPhonebookClearBtn"
+            android:layout_weight="1"
+            android:onClick="PhonebookClearButtonOnClick" />
+    </LinearLayout>
+</RelativeLayout>

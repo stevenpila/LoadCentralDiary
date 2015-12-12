@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <!-- jeff -->
+    <color name="colorRed">#FF8080</color>
+    <color name="colorGreen">#91F294</color>
+    <color name="colorDefault">#FAFAFA</color>
+
+    <color name="defaultColor">#FF4081</color>
+    <color name="transparentColor">#00000000</color>
+</resources>

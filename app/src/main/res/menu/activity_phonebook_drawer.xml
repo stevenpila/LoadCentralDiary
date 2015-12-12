@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item android:id="@+id/nav_deposit" android:icon="@drawable/my_deposit"
+            android:title="Deposit" />
+        <item android:id="@+id/nav_sell_load" android:icon="@drawable/my_sell"
+            android:title="Sell Load" />
+        <item android:id="@+id/nav_phonebook" android:icon="@drawable/my_contact"
+            android:title="Phonebook" />
+        <item android:id="@+id/nav_report" android:icon="@drawable/my_report"
+            android:title="Report" />
+    </group>
+
+    <!--item android:title="Communicate">
+        <menu>
+            <item android:id="@+id/nav_share" android:icon="@android:drawable/ic_menu_share"
+                android:title="Share" />
+            <item android:id="@+id/nav_send" android:icon="@android:drawable/ic_menu_send"
+                android:title="Send" />
+        </menu>
+    </item-->
+
+</menu>
