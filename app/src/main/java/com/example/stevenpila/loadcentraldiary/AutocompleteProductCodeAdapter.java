@@ -27,7 +27,7 @@ public class AutocompleteProductCodeAdapter extends ArrayAdapter<ProductLoadInfo
         m_context = context;
         m_view_resource_id = viewResourceId;
         m_full_product_code_list = product_code_list;
-        m_current_product_code_list = new ArrayList<ProductLoadInfo>(m_full_product_code_list);
+        m_current_product_code_list = new ArrayList<>(m_full_product_code_list);
     }
 
     public View getView(int position, View convertView, ViewGroup parent) {
@@ -90,16 +90,20 @@ public class AutocompleteProductCodeAdapter extends ArrayAdapter<ProductLoadInfo
     }
 
     private ArrayList<ProductLoadInfo> getResults(String constraint) {
-        ArrayList<ProductLoadInfo> results = new ArrayList<ProductLoadInfo>();
+        ArrayList<ProductLoadInfo> results = new ArrayList<>();
 
         for(ProductLoadInfo item : m_full_product_code_list) {
             if(item.m_product.toLowerCase().contains(constraint)) {
                 String product = item.m_product.toLowerCase();
+                if(product.indexOf("<amount>") > -1) {
+                    product = product.replace("<amount>", "[amount]");
+                }
                 ProductLoadInfo productLoadInfo = new ProductLoadInfo(item.m_product, item.m_product_description, item.m_discount);
                 if(product.indexOf(constraint) != -1) {
                     String startPart = product.substring(0, product.indexOf(constraint)).trim();
                     String endPart = product.substring(product.indexOf(constraint) + constraint.length()).trim();
                     String newStr = startPart + "<font color=\"#333333\"><b>" + constraint + "</b></font>" + endPart;
+
                     productLoadInfo.m_product_view = newStr.toUpperCase();
                 }
 

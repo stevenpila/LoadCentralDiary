@@ -20,7 +20,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:id="@+id/productTextView"
+                android:id="@+id/homeListViewItemProductTextView"
                 android:layout_alignParentTop="true"
                 android:layout_alignParentStart="true"
                 android:hint="Product" />
@@ -29,8 +29,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceMedium"
-                android:id="@+id/numberTextView"
-                android:layout_below="@+id/productTextView"
+                android:id="@+id/homeListViewItemNumberTextView"
+                android:layout_below="@+id/homeListViewItemProductTextView"
                 android:layout_alignParentStart="true"
                 android:hint="Number" />
 
@@ -38,18 +38,18 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceSmall"
-                android:id="@+id/datetimeTextView"
+                android:id="@+id/homeListViewItemDatetimeTextView"
                 android:hint="Date"
                 android:paddingTop="1.8dp"
-                android:layout_alignTop="@+id/productTextView"
-                android:layout_alignEnd="@+id/balanceTextView" />
+                android:layout_alignTop="@+id/homeListViewItemProductTextView"
+                android:layout_alignEnd="@+id/homeListViewItemBalanceTextView" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceMedium"
-                android:id="@+id/balanceTextView"
-                android:layout_below="@+id/productTextView"
+                android:id="@+id/homeListViewItemBalanceTextView"
+                android:layout_below="@+id/homeListViewItemProductTextView"
                 android:layout_alignParentEnd="true"
                 android:hint="Balance"
                 android:foregroundGravity="right"
@@ -60,9 +60,9 @@
                 android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/numberTextView"
+                android:layout_below="@+id/homeListViewItemNumberTextView"
                 android:layout_alignParentStart="true"
-                android:id="@+id/listViewItemHomeVerticalLayout"
+                android:id="@+id/homeListViewItemVerticalLayout"
                 android:weightSum="1"
                 android:visibility="gone">
 

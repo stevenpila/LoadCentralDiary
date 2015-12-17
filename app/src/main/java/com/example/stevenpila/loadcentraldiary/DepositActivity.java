@@ -138,6 +138,7 @@ public class DepositActivity extends AppCompatActivity
                 startActivity(new Intent(this, PhonebookActivity.class));
                 break;
             case R.id.nav_report:
+                startActivity(new Intent(this, HomeActivity.class));
                 break;
         }
 

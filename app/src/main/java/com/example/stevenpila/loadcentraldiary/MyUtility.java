@@ -1,6 +1,8 @@
 package com.example.stevenpila.loadcentraldiary;
 
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -43,26 +45,26 @@ public class MyUtility {
         SHORT,
         LONG
     }
+    static public String DOT = ".";
+    static public String COMMA = ",";
 
     static public String getCurrentDateTime() {
         Calendar c = Calendar.getInstance();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String dateTimeString = simpleDateFormat.format(c.getTime());
 
-        return dateTimeString;
+        return simpleDateFormat.format(c.getTime());
     }
 
     static public String getCurrentDate() {
         Calendar c = Calendar.getInstance();
 //        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd"); // let's support date only for now
-        String dateTimeString = simpleDateFormat.format(c.getTime());
 
-        return dateTimeString;
+        return simpleDateFormat.format(c.getTime());
     }
 
-    static public int getAmountFromProduct(String product) {
-        int amount = 0;
+    static public Pair<String, Integer> getProductAndAmountFromString(String product) {
+        Pair<String, Integer> productAndAmount = new Pair<>("", 0);
 
         if(!product.isEmpty()) {
             Pattern p = Pattern.compile("\\d+");
@@ -71,12 +73,14 @@ public class MyUtility {
             if(m.find()) {
                 String amountStr = m.group();
 
-                if(!amountStr.trim().isEmpty())
-                    amount = Integer.parseInt(amountStr.trim());
+                if(!amountStr.trim().isEmpty()) {
+                    productAndAmount.m_second = Integer.parseInt(amountStr.trim());
+                    productAndAmount.m_first = product.substring(0, product.indexOf(amountStr));
+                }
             }
         }
 
-        return amount;
+        return productAndAmount;
     }
 
     static public String getDate(String dateTime) {
@@ -243,6 +247,8 @@ public class MyUtility {
                 switch (getResultCode()) {
                     case Activity.RESULT_OK:
                         MyUtility.showToast(_context, "Successfully sent message.", MyUtility.ToastLength.LONG);
+                        IntentFilter intentFilter = new IntentFilter(MySMSListener.SMS_LISTENER_ACTION);
+                        _context.registerReceiver(new MySMSListener(), intentFilter);
                         break;
                     case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
                         MyUtility.showToast(_context, "Failed to send message. Generic failure.", MyUtility.ToastLength.LONG);
@@ -276,7 +282,7 @@ public class MyUtility {
     }
 
     static public void setTextViewValue(TextView textView, double value) {
-        textView.setText(String.format("%.2f", value));
+        textView.setText(setDecimalPlaces(2, value));
     }
 
     static public String setDecimalPlaces(int decimalPlaces, double value) {
@@ -288,5 +294,25 @@ public class MyUtility {
         Matcher matcher = pattern.matcher(string);
 
         return (matcher.find()) ? matcher.group().trim() : "";
+    }
+
+    static public void showNotification(Context context, String title, String content) {
+        Intent intent = new Intent(context, HomeActivity.class);
+//        PendingIntent pendingIntent = PendingIntent.getActivity(context, (int) System.currentTimeMillis(), intent, 0);
+
+        Notification notification = new Notification.Builder(context)
+                .setContentTitle(title)
+                .setStyle(new Notification.BigTextStyle().bigText(content))
+//                .setContentText(content)
+                .setSmallIcon(R.drawable.my_loadcentral_logo)
+                .setAutoCancel(true)
+                .build();
+
+        NotificationManager notificationManager  = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(0, notification);
+    }
+
+    static public String concatTwoStringWithDelimiter(String leftStr, String delimiter, String rightStr) {
+        return leftStr + delimiter + rightStr;
     }
 }

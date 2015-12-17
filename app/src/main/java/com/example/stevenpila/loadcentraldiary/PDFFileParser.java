@@ -45,15 +45,15 @@ public class PDFFileParser {
 
     public PDFFileParser() {
         m_file_name = DEFAULT_PDF_FILE_NAME;
-        m_product_info_list = new LinkedHashMap<String, LinkedHashMap<String, ArrayList<ProductLoadInfo>>>();
+        m_product_info_list = new LinkedHashMap<>();
     }
     public PDFFileParser(String file_name) {
         m_file_name = file_name;
-        m_product_info_list = new LinkedHashMap<String, LinkedHashMap<String, ArrayList<ProductLoadInfo>>>();
+        m_product_info_list = new LinkedHashMap<>();
     }
 
     public boolean loadProductLoadList(Context context) {
-        final ArrayList<String> PRODUCT_CATEGORY_LIST =  new ArrayList<String>(Arrays.asList(context.getResources().getStringArray(R.array.product_category)));
+        final ArrayList<String> PRODUCT_CATEGORY_LIST =  new ArrayList<>(Arrays.asList(context.getResources().getStringArray(R.array.product_category)));
         m_error_message = "";
         boolean bRet = true;
 

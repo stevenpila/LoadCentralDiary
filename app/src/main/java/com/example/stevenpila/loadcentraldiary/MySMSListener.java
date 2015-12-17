@@ -16,50 +16,57 @@ import java.util.regex.Pattern;
  */
 public class MySMSListener extends BroadcastReceiver {
     static public final String SMS_LISTENER_ACTION = "android.provider.Telephony.SMS_RECEIVED";
+
     private final String REGEX_GET_CLIENT_NUMBER = "([0-9]+)(\\+)*$";
     private final String REGEX_GET_CLIENT_PRODUCT = "(?<=You sold )[A-z0-9]+";
+    private final String REGEX_GET_CURRENT_BALANCE = "[0-9\\.]+$";
+
+    private final String NUMBER_PLUS63 = "63";
+    private final char NUMBER_ZERO = '0';
+
+    private final String PDUS = "pdus";
 
     @Override
     public void onReceive(Context arg0, Intent arg1) {
+        MyUtility.showToast(arg0, "MySMSListener::onReceive - Started.", MyUtility.ToastLength.LONG);
         if(arg1.getAction().equalsIgnoreCase(SMS_LISTENER_ACTION)) {
             Bundle extras = arg1.getExtras();
             ArrayList<String> accessNumbers = getAccessNumbers(arg0);
 
-            String messageStr = "Private Message: ";
             if(extras != null) {
-                Object[] smsExtras = (Object[]) extras.get("pdus");
+                Object[] smsExtras = (Object[]) extras.get(PDUS);
 
                 for(int i = 0; i < smsExtras.length; ++i) {
                     SmsMessage smsMessage = SmsMessage.createFromPdu((byte[]) smsExtras[i]);
 
                     String msgBody = smsMessage.getMessageBody().toString();
-                    String msgSrc = smsMessage.getOriginatingAddress();
-                    String newMsgSrc = getAlternateNumber(msgSrc);
+                    String msgSrc = getAlternateNumber(smsMessage.getOriginatingAddress());
 
-                    MyUtility.showToast(arg0, msgSrc + " to " + newMsgSrc, MyUtility.ToastLength.SHORT);
-                    if(accessNumbers.contains(newMsgSrc))
-                        processMessage(arg0, msgBody);
+                    if(accessNumbers.contains(msgSrc))
+                        processMessage(arg0, msgBody, msgSrc);
                     else {
-                        messageStr += "IGNORED: SMS from " + msgSrc + " : " + msgBody;
-                        MyUtility.showToast(arg0, messageStr, MyUtility.ToastLength.LONG);
+//                        messageStr += "Ignored SMS from " + msgSrc; // not from any of the loadcentral access numbers
+//                        MyUtility.showToast(arg0, messageStr, MyUtility.ToastLength.LONG);
                     }
-
-//                    abortBroadcast();
                 }
+
+                MyUtility.showToast(arg0, "MySMSListener::onReceive - Finished.", MyUtility.ToastLength.LONG);
+                arg0.unregisterReceiver(this);
             }
         }
     }
 
-    private void processMessage(Context context, String message) {
-        String balance = MyUtility.getStringFromRegex(message, "[0-9\\.]+$");
+    private void processMessage(Context context, String message, String number) {
+        String balance = MyUtility.getStringFromRegex(message, REGEX_GET_CURRENT_BALANCE);
         if(message.indexOf(".") > -1 && !balance.isEmpty()) {
-            String tempMsg = message.substring(0, message.indexOf("."));    // get message with product and number // TODO - get wallet balance
-            double dBalance = (balance.isEmpty()) ? 0.00 : Double.parseDouble(balance);
+            String tempMsg = message.substring(0, message.indexOf(MyUtility.DOT));    // get message with product and number
+            double dBalance = (balance.isEmpty()) ? -1 : Double.parseDouble(balance);
 
             String clientNumber = MyUtility.getStringFromRegex(tempMsg, REGEX_GET_CLIENT_NUMBER); // get client number
-            String clientProduct = MyUtility.getStringFromRegex(tempMsg, REGEX_GET_CLIENT_PRODUCT);
+            String clientProduct = MyUtility.getStringFromRegex(tempMsg, REGEX_GET_CLIENT_PRODUCT); // get client product
 
-            if(!clientNumber.isEmpty() && !clientProduct.isEmpty()) {
+            if(!clientNumber.isEmpty() && !clientProduct.isEmpty() && dBalance >= 0) {
+                MyUtility.showToast(context, "LoadCentralDiary: Received SMS from " + number, MyUtility.ToastLength.LONG);
                 DatabaseHandler databaseHandler = new DatabaseHandler(context);
                 long id = databaseHandler.getSellLoadID(clientNumber, clientProduct, dBalance);
 
@@ -67,17 +74,17 @@ public class MySMSListener extends BroadcastReceiver {
                     if(databaseHandler.setValidSellLoad((int) id)) {
                         if(HomeActivity.getInstance() != null) {
                             HomeActivity.getInstance().setValidSellLoad((int) id);
-                            MyUtility.showToast(context, "Successfully validated. " + clientNumber + ":" + clientProduct, MyUtility.ToastLength.LONG);
+                            MyUtility.showToast(context, "Successfully validated. (Product: " + clientProduct + ", Number: " + clientNumber + ", Balance: " + dBalance + ").", MyUtility.ToastLength.LONG);
                         }
                     }
                     else
-                        MyUtility.showToast(context, "Failed to validate. " + clientNumber + ":" + clientProduct, MyUtility.ToastLength.LONG);
+                        MyUtility.showToast(context, "Failed to validate. (Product: " + clientProduct + ", Number: " + clientNumber + ", Balance: " + dBalance + ").", MyUtility.ToastLength.LONG);
                 }
                 else
-                    MyUtility.showToast(context, "Record does not exists. (" + clientNumber + ", " + clientProduct + ", " + dBalance + ")", MyUtility.ToastLength.LONG);
+                    MyUtility.showToast(context, "Record does not exists. (Product: " + clientProduct + ", Number: " + clientNumber + ", Balance: " + dBalance + ").", MyUtility.ToastLength.LONG);
             }
             else
-                MyUtility.showToast(context, "Either Number or Product cannot be empty.", MyUtility.ToastLength.LONG);
+                MyUtility.showToast(context, "Number, Product and Balance values are required.", MyUtility.ToastLength.LONG);
         }
         else
             MyUtility.showToast(context, "Invalid Message: " + message, MyUtility.ToastLength.LONG);
@@ -88,7 +95,7 @@ public class MySMSListener extends BroadcastReceiver {
         String[] fullAccessNumbers = context.getResources().getStringArray(R.array.access_numbers);
 
         for (String accessNumber: fullAccessNumbers) {
-            accessNumbers.add(accessNumber.split(",")[1]);
+            accessNumbers.add(accessNumber.split(MyUtility.COMMA)[1]);
         }
 
         return accessNumbers;
@@ -97,8 +104,8 @@ public class MySMSListener extends BroadcastReceiver {
     private String getAlternateNumber(String number) {
         String alternateNumber = number;
 
-        if(number.substring(0, 3).equals("+63")) {
-            alternateNumber = "0" + number.substring(3);
+        if(number.substring(0, 3).equals(NUMBER_PLUS63)) {
+            alternateNumber = NUMBER_ZERO + number.substring(3);
         }
 
         return alternateNumber;

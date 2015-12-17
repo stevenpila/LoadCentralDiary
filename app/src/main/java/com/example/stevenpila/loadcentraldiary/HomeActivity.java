@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -75,14 +76,14 @@ public class HomeActivity extends AppCompatActivity
         setCurrentBalance();    // initialize current balance
         MyUtility.setTextViewValue(balanceView, m_currentBalance); // initializes the current balance upon application start
 
-        setListView(navigationView.getRootView());  // initialize list view
+        setListView();  // initialize list view
         m_listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                SoldLoadInfo soldLoadInfo = (SoldLoadInfo) parent.getItemAtPosition(position);
+                HistoryRecordInfo historyRecordInfo = (HistoryRecordInfo) parent.getItemAtPosition(position);
 
-                if(!soldLoadInfo.m_description.isEmpty()) {
-                    alertDialog(soldLoadInfo.m_description);
+                if(historyRecordInfo.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD) && !historyRecordInfo.mSoldLoadInfo.m_description.isEmpty()) {
+                    alertDialog(historyRecordInfo.mSoldLoadInfo.m_description);
                 }
             }
         });
@@ -97,7 +98,6 @@ public class HomeActivity extends AppCompatActivity
 
 //        IntentFilter intentFilter = new IntentFilter(MySMSListener.SMS_LISTENER_ACTION);
 //        registerReceiver(new MySMSListener(), intentFilter);
-
         m_homeActivityInstance = this;
     }
 
@@ -153,6 +153,7 @@ public class HomeActivity extends AppCompatActivity
                 startActivity(new Intent(this, PhonebookActivity.class));
                 break;
             case R.id.nav_report:
+                startActivity(new Intent(this, HomeActivity.class));
                 break;
         }
 
@@ -172,16 +173,11 @@ public class HomeActivity extends AppCompatActivity
         }
     }
 
-    private void setListView(View view) {
-        ArrayList<SoldLoadInfo> arrayOfSoldLoadInfos = new ArrayList<SoldLoadInfo>();
-        ListViewAdapter listViewAdapter = new ListViewAdapter(this, arrayOfSoldLoadInfos);
+    private void setListView() {
+        ArrayList<HistoryRecordInfo> arrayOfHistoryRecordInfos = m_dbHandler.getHistoryRecordList();
+        ListViewAdapter listViewAdapter = new ListViewAdapter(this, arrayOfHistoryRecordInfos);
         m_listView.setAdapter(listViewAdapter);
         registerForContextMenu(m_listView); // triggered by long-pressed click
-
-        // adding items to list view...
-        if(!m_dbHandler.getSellLoadList(listViewAdapter)) {
-            MyUtility.showToast(this, "Sold load record is empty.", MyUtility.ToastLength.LONG);
-        }
     }
 
     @Override
@@ -191,11 +187,17 @@ public class HomeActivity extends AppCompatActivity
             menuInflater.inflate(R.menu.list_view_item_menu_home, menu);
             AdapterView.AdapterContextMenuInfo adapterContextMenuInfo = (AdapterView.AdapterContextMenuInfo) menuInfo;
             int position = adapterContextMenuInfo.position;
-            boolean isPaid = ((SoldLoadInfo) m_listView.getItemAtPosition(position)).m_isPaid;
+            HistoryRecordInfo historyRecordInfo = (HistoryRecordInfo) m_listView.getItemAtPosition(position);
 
-            if(isPaid) {    // hide Paid button if sold load is already paid
-                menu.findItem(R.id.paidItem).setVisible(false);
+            if(historyRecordInfo.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD)) {
+                boolean isPaid = ((HistoryRecordInfo) m_listView.getItemAtPosition(position)).mSoldLoadInfo.m_isPaid;
+
+                if(isPaid) {    // hide Paid button if sold load is already paid
+                    menu.findItem(R.id.paidItem).setVisible(false);
+                }
             }
+            else if(historyRecordInfo.mTableName.equals(DatabaseHandler.TABLE_DEPOSIT))
+                menu.findItem(R.id.paidItem).setVisible(false);
         }
     }
 
@@ -203,16 +205,16 @@ public class HomeActivity extends AppCompatActivity
     public boolean onContextItemSelected(MenuItem item) {
         AdapterView.AdapterContextMenuInfo adapterContextMenuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
         int position = adapterContextMenuInfo.position;
-        SoldLoadInfo soldLoadInfo = (SoldLoadInfo) m_listView.getItemAtPosition(position);
+        HistoryRecordInfo historyRecordInfo = (HistoryRecordInfo) m_listView.getItemAtPosition(position);
 
         String messageStr = "";
         switch (item.getItemId()) {
             case R.id.paidItem:
-                if(m_dbHandler.setSellLoadPaid(soldLoadInfo.m_id)) {
+                if(m_dbHandler.setSellLoadPaid(historyRecordInfo.mSoldLoadInfo.m_id)) {
 //                    adapterContextMenuInfo.targetView.setBackgroundColor(getResources().getColor(R.color.colorDefault));
                     ImageView paidImage = (ImageView) adapterContextMenuInfo.targetView.findViewById(R.id.homeListViewItemPaidImage);
 
-                    ((SoldLoadInfo) m_listView.getItemAtPosition(position)).m_isPaid = true;
+                    ((HistoryRecordInfo) m_listView.getItemAtPosition(position)).mSoldLoadInfo.m_isPaid = true;
                     paidImage.setBackgroundColor(getResources().getColor(R.color.colorGreen));
                     messageStr = "Successfully set status to PAID.";
                 }
@@ -248,12 +250,15 @@ public class HomeActivity extends AppCompatActivity
         ListViewAdapter listViewAdapter = (ListViewAdapter) m_listView.getAdapter();
 
         for(int i = 0; i < listViewAdapter.getCount(); ++i) {
-            SoldLoadInfo soldLoadInfo = listViewAdapter.getItem(i);
+            HistoryRecordInfo historyRecordInfo = listViewAdapter.getItem(i);
 
-            if(soldLoadInfo.m_id == id) {
-                listViewAdapter.getItem(i).m_isValidated = true;
-                listViewAdapter.notifyDataSetChanged();
-                break;
+            if(historyRecordInfo.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD)) {
+                if (historyRecordInfo.mSoldLoadInfo.m_id == id) {
+                    listViewAdapter.getItem(i).mSoldLoadInfo.m_isValidated = true;
+                    ((ListViewAdapter) m_listView.getAdapter()).notifyDataSetChanged();
+
+                    MyUtility.showNotification(this, "Sold Load Validated", "Product: " + historyRecordInfo.mSoldLoadInfo.m_product + "\nNumber: " + historyRecordInfo.mSoldLoadInfo.m_number + "\nBalance: " + historyRecordInfo.mSoldLoadInfo.m_balance);
+                }
             }
         }
     }

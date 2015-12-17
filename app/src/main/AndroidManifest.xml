@@ -19,7 +19,6 @@
             android:theme="@style/AppTheme.NoActionBar" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -47,14 +46,14 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.stevenpila.loadcentraldiary.PhonebookActivity" />
         </activity>
-        <receiver
+        <!--receiver
             android:name=".MySMSListener"
             android:enabled="true"
             android:exported="true" >
             <intent-filter android:priority="999">
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
-        </receiver>
+        </receiver-->
     </application>
 
 </manifest>

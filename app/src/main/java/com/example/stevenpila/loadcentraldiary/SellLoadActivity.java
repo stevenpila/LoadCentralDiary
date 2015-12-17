@@ -36,7 +36,7 @@ import java.util.List;
 public class SellLoadActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    private TextView balanceView;
+    private TextView m_balanceView;
     private MyEditText m_dateTxt;
     private MyEditText m_numberTxt;
     private MyAutoCompleteTextView m_productTxt;
@@ -51,7 +51,7 @@ public class SellLoadActivity extends AppCompatActivity
     private DatabaseHandler m_dbHandler;
 
     private PhonebookListViewAdapter m_phonebookListViewAdapterForSearch = null;
-//    private NavigationView m_navigationView;
+    private ArrayList<MyUtility.Pair<String, MyUtility.Pair<Double, MyUtility.Pair<Integer, Integer>>>> m_productCodesWithAmount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,30 +79,21 @@ public class SellLoadActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         // jeff
-        m_dbHandler = new DatabaseHandler(this);    // initialize database first
-
-        m_dateTxt = (MyEditText) findViewById(R.id.dateTxt);
-        m_numberTxt = (MyEditText) findViewById(R.id.numberTxt);
-        m_productTxt = (MyAutoCompleteTextView) findViewById(R.id.productTxt);
-        m_balanceTxt = (MyEditText) findViewById(R.id.balanceTxt);
-        m_descriptionTxt = (MyEditText) findViewById(R.id.descriptionTxt);
-        m_paidRadioBtn = (RadioButton) findViewById(R.id.paidRadioBtn);
-
         View navHeaderView = LayoutInflater.from(this).inflate(R.layout.nav_header_sell_load, null);
         navigationView.addHeaderView(navHeaderView);
 
-        balanceView = (TextView) navHeaderView.findViewById(R.id.balance);
+        m_dbHandler = new DatabaseHandler(this);    // initialize database...
+        initializeFields(navHeaderView);  // initialize edittexts & textviews...
+        setCurrentBalance();    // initialize current balance...
 
-        setCurrentBalance();    // initialize current balance
-
-        MyUtility.setTextViewValue(balanceView, m_currentBalance); // initializes the current balance upon application start
-        m_balanceTxt.setText(String.format("%.2f", m_currentBalance)); // initializes the current balance upon application start
+        MyUtility.setTextViewValue(m_balanceView, m_currentBalance); // initializes the current balance upon application start
+        m_balanceTxt.setText(MyUtility.setDecimalPlaces(2, m_currentBalance)); // initializes the current balance upon application start
 
         m_dateTxt.setText(MyUtility.getCurrentDate());    // set default value to current date (format: yyyy-mm-dd)
         m_productTxt.setOnFocusChangeListener(new View.OnFocusChangeListener() {   // if value is empty, set to default value of 0.0
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
-                if (!hasFocus) {
+                if (!hasFocus) {    // if lost focus
                     String productStr = m_productTxt.getText().toString().trim();
 
                     calculateNewBalance(productStr);
@@ -112,13 +103,13 @@ public class SellLoadActivity extends AppCompatActivity
         m_balanceTxt.setOnFocusChangeListener(new View.OnFocusChangeListener() {   // if value is empty, set to default value of 0.0
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
-                if (!hasFocus) {
+                if (!hasFocus) {    // if lost focus
                     m_isFocusBalanceTxt = false;
 
                     if (m_balanceTxt.getText().toString().isEmpty()) {
                         m_balanceTxt.setText("0.00");
                     }
-                } else {
+                } else {    // if focus
                     m_isFocusBalanceTxt = true;
 
                     if (m_balanceTxt.getText().toString().equals("0.00")) {
@@ -127,20 +118,20 @@ public class SellLoadActivity extends AppCompatActivity
                 }
             }
         });
-
         m_productTxt.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 ProductLoadInfo productLoadInfo = (ProductLoadInfo) parent.getAdapter().getItem(position);
 
-                m_productTxt.setText(productLoadInfo.m_product);
-                calculateNewBalance(productLoadInfo.m_product);
+                m_productTxt.setText(productLoadInfo.m_product.replace("<amount>", ""));
+                calculateNewBalance(productLoadInfo.m_product.replace("<amount>", ""));
             }
         });
         ArrayList<ProductLoadInfo> full_product_code_list = m_dbHandler.getProductCodeList();
         ArrayAdapter<ProductLoadInfo> autocompleteAdapter = new AutocompleteProductCodeAdapter(this, R.layout.list_view_item_sell_load, full_product_code_list);
         m_productTxt.setAdapter(autocompleteAdapter);
         m_productTxt.setBackground(getResources().getDrawable(R.drawable.my_edit_text_normal));
+        m_productCodesWithAmount = m_dbHandler.getProductCodeWithAmount();
     }
 
     @Override
@@ -195,6 +186,7 @@ public class SellLoadActivity extends AppCompatActivity
                 startActivity(new Intent(this, PhonebookActivity.class));
                 break;
             case R.id.nav_report:
+                startActivity(new Intent(this, HomeActivity.class));
                 break;
         }
 
@@ -202,6 +194,28 @@ public class SellLoadActivity extends AppCompatActivity
     }
 
     // jeff
+    public void initializeFields(View view) {
+        m_dateTxt = (MyEditText) findViewById(R.id.dateTxt);
+        m_numberTxt = (MyEditText) findViewById(R.id.numberTxt);
+        m_productTxt = (MyAutoCompleteTextView) findViewById(R.id.productTxt);
+        m_balanceTxt = (MyEditText) findViewById(R.id.balanceTxt);
+        m_descriptionTxt = (MyEditText) findViewById(R.id.descriptionTxt);
+        m_paidRadioBtn = (RadioButton) findViewById(R.id.paidRadioBtn);
+        m_balanceView = (TextView) view.findViewById(R.id.balance);
+    }
+
+    private void setCurrentBalance() {
+        double currentBalance = m_dbHandler.getLatestBalance();
+
+        if(currentBalance < 0) {
+            m_currentBalance = 0.0;
+            MyUtility.showToast(this, "Failed to get current balance.", MyUtility.ToastLength.LONG);
+        }
+        else {
+            m_currentBalance = currentBalance;
+        }
+    }
+
     public void submitButtonOnClick(View view) {
         if(!ValidateRequiredFields())
             return;
@@ -209,30 +223,49 @@ public class SellLoadActivity extends AppCompatActivity
         String dateTimeStr = m_dateTxt.getText().toString().trim() + " 00:00:00"; // datetime
         String numberStr = m_numberTxt.getText().toString().trim();   // number
         String productStr = m_productTxt.getText().toString().trim();   // product
-        int amount = MyUtility.getAmountFromProduct(productStr);    // amount from product
+        MyUtility.Pair<String, Integer> ProductAndAmount = MyUtility.getProductAndAmountFromString(productStr);    // product code and amount from product string
         double userBalance = Double.parseDouble(m_balanceTxt.getText().toString().trim());  // balance
         String descStr = (m_descriptionTxt.getText().toString().isEmpty()) ? "" : m_descriptionTxt.getText().toString().trim();
-        boolean isSellLoadProceed = true;
 
-        if(amount > 0 && userBalance > 0) {
-            ProductLoadInfo productLoadInfo = new ProductLoadInfo();
-            if(m_dbHandler.isProductCodeExist(productLoadInfo, productStr)) {
-                double discountedAmount = MyUtility.roundOff((amount * productLoadInfo.m_discount) / 100, 2);
-                double totalDiscountedAmount = amount - discountedAmount;
-                double newBalance = Double.parseDouble(MyUtility.setDecimalPlaces(2, m_currentBalance - totalDiscountedAmount));
-                SoldLoadInfo soldLoadInfo = new SoldLoadInfo(0, productStr, numberStr, dateTimeStr, userBalance, descStr, m_isPaid, false);
-
-                if(userBalance != newBalance) {
-                    isSellLoadProceed = false;
-                    confirmDialog(view, amount, soldLoadInfo, newBalance);
+        if(ProductAndAmount.m_second > 0 && userBalance > 0) {
+            String tempProductStr = productStr;
+            double tempDiscount = -2;
+            for (MyUtility.Pair<String, MyUtility.Pair<Double, MyUtility.Pair<Integer, Integer>>> productCodeWithInfo : m_productCodesWithAmount) {
+                if(productCodeWithInfo.m_first.indexOf(ProductAndAmount.m_first) > -1) {
+                    tempDiscount = -1;
+                    tempProductStr = productCodeWithInfo.m_first;
+                    if(ProductAndAmount.m_second >= productCodeWithInfo.m_second.m_second.m_first && ProductAndAmount.m_second <= productCodeWithInfo.m_second.m_second.m_second) {
+                        tempDiscount = productCodeWithInfo.m_second.m_first;
+                        MyUtility.showToast(this, "Product: " + productCodeWithInfo.m_first + " Discount: " + productCodeWithInfo.m_second.m_first + " Min: " + productCodeWithInfo.m_second.m_second.m_first + " Max: " + productCodeWithInfo.m_second.m_second.m_second, MyUtility.ToastLength.LONG);
+                        break;
+                    }
                 }
+            }
+            if(tempDiscount == -1) {
+                MyUtility.showToast(this, "Amount (" + ProductAndAmount.m_second + ") is too low/high." , MyUtility.ToastLength.LONG);
+                return;
+            }
+            double productDiscount;
+            if((productDiscount = m_dbHandler.getDiscountIfProductCodeExist(tempProductStr)) > -1) {
+                if(tempDiscount > -1)
+                    productDiscount = tempDiscount;
 
-                if(isSellLoadProceed) {
-                    enterPinNumber(view, amount, soldLoadInfo);
+                double discountedAmount = MyUtility.roundOff((ProductAndAmount.m_second * productDiscount) / 100, 2);
+                double totalDiscountedAmount = ProductAndAmount.m_second - discountedAmount;
+                double actualBalance = Double.parseDouble(MyUtility.setDecimalPlaces(2, m_currentBalance - totalDiscountedAmount));
+
+                if(m_currentBalance >= totalDiscountedAmount) {
+                    SoldLoadInfo soldLoadInfo = new SoldLoadInfo(0, productStr, numberStr, dateTimeStr, userBalance, descStr, m_isPaid, false); // TODO - userBalance or actualBalance?
+                    confirmSellLoadInfoDialog(soldLoadInfo, ProductAndAmount.m_second, userBalance, actualBalance);
+                }
+                else {
+                    m_productTxt.setError(true);
+                    m_balanceTxt.setText(MyUtility.setDecimalPlaces(2, m_currentBalance));
+                    MyUtility.showToast(this, "Insufficient balance.", MyUtility.ToastLength.LONG);
                 }
             }
             else
-                MyUtility.showToast(this, "Invalid product (" + productStr + "). It cannot be found in the list.", MyUtility.ToastLength.LONG);
+                MyUtility.showToast(this, "Invalid \"" + productStr + "\" product.", MyUtility.ToastLength.LONG);
         }
     }
 
@@ -240,11 +273,12 @@ public class SellLoadActivity extends AppCompatActivity
         m_dateTxt.setText(MyUtility.getCurrentDate());
         m_numberTxt.setText("");
         m_productTxt.setText("");
+        m_descriptionTxt.setText("");
 
         if(m_isFocusBalanceTxt)
             m_balanceTxt.setText("");
         else if(!m_balanceTxt.getText().toString().isEmpty())
-            m_balanceTxt.setText(String.format("%.2f", m_currentBalance));
+            m_balanceTxt.setText(MyUtility.setDecimalPlaces(2, m_currentBalance));
 
         m_paidRadioBtn.setChecked(true);
     }
@@ -263,43 +297,29 @@ public class SellLoadActivity extends AppCompatActivity
             }
     }
 
-    private void addSellLoad(int amount, SoldLoadInfo soldLoadInfo, String pinNumber) {
-        double newAmount = Double.parseDouble(String.valueOf(amount));
+    private void confirmSellLoadInfoDialog(final SoldLoadInfo soldLoadInfo, final int amount, final double userBalance, final double actualBalance) {
+        String dialogMessage = "Product: " + soldLoadInfo.m_product + "\n" +
+                "Number: " + soldLoadInfo.m_number + "\n" +
+                "Balance: " + userBalance + " (Actual: " + actualBalance + ")";
 
-        long newId = m_dbHandler.addSellLoad(soldLoadInfo.m_dateTime, soldLoadInfo.m_number, soldLoadInfo.m_product, newAmount, soldLoadInfo.m_balance, soldLoadInfo.m_description, soldLoadInfo.m_isPaid);
-        String insertMessage;
-
-        if(newId < 0) // add new sell load failed
-            insertMessage = "Failed to sold " + soldLoadInfo.m_product + ".";
-        else {
-            insertMessage = "Successfully sold " + soldLoadInfo.m_product + ".";
-
-            MyUtility.setTextViewValue(balanceView, soldLoadInfo.m_balance); // add deposited amount to current balance
-            m_currentBalance = soldLoadInfo.m_balance;
-
-            String loadMessage = MyUtility.createSellLoadFormat(soldLoadInfo.m_product, pinNumber, soldLoadInfo.m_number);
-
-            // TODO - get loadcentral number...
-            chooseFromAccessNumbers(loadMessage);
-        }
-
-        MyUtility.showToast(this, insertMessage, MyUtility.ToastLength.LONG);
+        new AlertDialog.Builder(this)
+                .setTitle("Confirm")
+                .setMessage(dialogMessage)
+                .setCancelable(false)
+                .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (userBalance != actualBalance)
+                            confirmUserBalanceDialog(soldLoadInfo, amount, actualBalance);
+                        else
+                            confirmSendToLoadCentralDialog(amount, soldLoadInfo);
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
-
-    private void setCurrentBalance() {
-        double currentBalance = m_dbHandler.getLatestBalance();
-
-        if(currentBalance < 0) {
-            m_currentBalance = 0.0;
-            MyUtility.showToast(this, "Failed to get current balance.", MyUtility.ToastLength.LONG);
-        }
-        else {
-            m_currentBalance = currentBalance;
-        }
-    }
-
-    private void confirmDialog(final View view, final int amount, final SoldLoadInfo soldLoadInfo, double actualBalance) {
-        String dialogMessage = "Your balance (" + soldLoadInfo.m_balance + ") is not equal to the actual balance (" + MyUtility.setDecimalPlaces(2, actualBalance) + ").\n\n" +
+    private void confirmUserBalanceDialog(final SoldLoadInfo soldLoadInfo, final int amount, final double actualBalance) {
+        String dialogMessage = "Your balance (" + MyUtility.setDecimalPlaces(2, soldLoadInfo.m_balance) + ") is not equal to the actual balance (" + MyUtility.setDecimalPlaces(2, actualBalance) + ").\n\n" +
                 "Are you sure you want to proceed?";
 
         new AlertDialog.Builder(this)
@@ -308,11 +328,73 @@ public class SellLoadActivity extends AppCompatActivity
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        enterPinNumber(view, amount, soldLoadInfo);
+                        confirmSendToLoadCentralDialog(amount, soldLoadInfo);
                     }
                 })
                 .setNegativeButton("No", null)
                 .show();
+    }
+    private void confirmSendToLoadCentralDialog(final int amount, final SoldLoadInfo soldLoadInfo) {
+        new AlertDialog.Builder(this)
+                .setMessage("Do you want to send this to LoadCentral?")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            AlertDialog.Builder alertDialog = new AlertDialog.Builder(SellLoadActivity.this);
+                            alertDialog.setTitle("PIN");
+
+                            final EditText pinNumberTxt = new EditText(SellLoadActivity.this);
+
+                            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT,
+                                    LinearLayout.LayoutParams.MATCH_PARENT
+                            );
+                            pinNumberTxt.setHint("Enter here");
+                            pinNumberTxt.setLayoutParams(layoutParams);
+                            pinNumberTxt.setInputType(InputType.TYPE_CLASS_NUMBER);
+
+                            alertDialog.setView(pinNumberTxt)
+                                    .setIcon(R.drawable.my_key)
+                                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            final String pinNumber = pinNumberTxt.getText().toString().trim();
+
+                                            if (!pinNumber.isEmpty())
+                                                addSellLoad(amount, soldLoadInfo, pinNumber);
+                                        }
+                                    })
+                                    .setNegativeButton("Cancel", null)
+                                    .setCancelable(false)
+                                    .show();
+                        }
+                    }
+                )
+                .setNegativeButton("No", null)
+                .show();
+    }
+
+    private void addSellLoad(int amount, SoldLoadInfo soldLoadInfo, String pinNumber) {
+        double newAmount = Double.parseDouble(String.valueOf(amount));
+
+        long newId = m_dbHandler.addSellLoad(soldLoadInfo.m_dateTime, soldLoadInfo.m_number, soldLoadInfo.m_product, newAmount, soldLoadInfo.m_balance, soldLoadInfo.m_description, soldLoadInfo.m_isPaid);
+        String insertMessage;
+
+        if(newId < 0) // add new sell load failed
+            insertMessage = "Failed to sold " + soldLoadInfo.m_product + " to " + soldLoadInfo.m_number + ".";
+        else {
+            insertMessage = "Successfully sold " + soldLoadInfo.m_product + " to " + soldLoadInfo.m_number + ".";
+
+            MyUtility.setTextViewValue(m_balanceView, soldLoadInfo.m_balance); // add deposited amount to current balance
+            m_currentBalance = soldLoadInfo.m_balance;
+
+            String loadMessage = MyUtility.createSellLoadFormat(soldLoadInfo.m_product, pinNumber, soldLoadInfo.m_number);
+
+            chooseFromAccessNumbers(loadMessage);
+        }
+
+        MyUtility.showToast(this, insertMessage, MyUtility.ToastLength.LONG);
     }
 
     private boolean ValidateRequiredFields() {
@@ -327,7 +409,6 @@ public class SellLoadActivity extends AppCompatActivity
             bRet = false;
         }
         if(m_productTxt.getText().toString().isEmpty()) {
-            // TODO - do something with this one to be like MyEditText
             m_productTxt.setError(true);
             bRet = false;
         }
@@ -391,7 +472,6 @@ public class SellLoadActivity extends AppCompatActivity
             });
         }
     }
-
     private void chooseFromAccessNumbers(final String loadMessage) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         final String[] accessNumber = getResources().getStringArray(R.array.access_numbers);
@@ -426,64 +506,50 @@ public class SellLoadActivity extends AppCompatActivity
 
     private void calculateNewBalance(String productStr) {
         if (!productStr.isEmpty()) {
-            // check here first if productStr is valid...
-            int amount = MyUtility.getAmountFromProduct(productStr);    // amount from product
-            if(amount > 0) {
-                ProductLoadInfo productLoadInfo = new ProductLoadInfo();
-                if(m_dbHandler.isProductCodeExist(productLoadInfo, productStr)) {
-                    double discountedAmount = MyUtility.roundOff((amount * productLoadInfo.m_discount) / 100, 2);
-                    double totalDiscountedAmount = MyUtility.roundOff(amount - discountedAmount, 2);
+            MyUtility.Pair<String, Integer> ProductAndAmount = MyUtility.getProductAndAmountFromString(productStr);    // get product code and amount from product string (E.g., SNXTU200 -> m_first = SNXTU, m_second = 200)
+            if(ProductAndAmount.m_second > 0) {
+                double tempDiscount = -2;
+                for (MyUtility.Pair<String, MyUtility.Pair<Double, MyUtility.Pair<Integer, Integer>>> productCodeWithInfo : m_productCodesWithAmount) {
+                    if(productCodeWithInfo.m_first.indexOf(ProductAndAmount.m_first) > -1) {
+                        productStr = productCodeWithInfo.m_first;
+                        tempDiscount = -1;
+                        if(ProductAndAmount.m_second >= productCodeWithInfo.m_second.m_second.m_first && ProductAndAmount.m_second <= productCodeWithInfo.m_second.m_second.m_second) {
+                            tempDiscount = productCodeWithInfo.m_second.m_first;
+                            MyUtility.showToast(this, "Product: " + productCodeWithInfo.m_first + " Discount: " + productCodeWithInfo.m_second.m_first + " Min: " + productCodeWithInfo.m_second.m_second.m_first + " Max: " + productCodeWithInfo.m_second.m_second.m_second, MyUtility.ToastLength.LONG);
+                            break;
+                        }
+                    }
+                }
+                if(tempDiscount == -1) {
+                    MyUtility.showToast(this, "Amount (" + ProductAndAmount.m_second + ") is too low/high." , MyUtility.ToastLength.LONG);
+                    return;
+                }
+                double productDiscount;
+                if((productDiscount = m_dbHandler.getDiscountIfProductCodeExist(productStr)) > -1) {
+                    if(tempDiscount > -1)
+                        productDiscount = tempDiscount;
+
+                    MyUtility.showToast(this, "Product: " + productStr + " Discount: " + productDiscount, MyUtility.ToastLength.LONG);
+
+                    double discountedAmount = MyUtility.roundOff((ProductAndAmount.m_second * productDiscount) / 100, 2);
+                    double totalDiscountedAmount = MyUtility.roundOff(ProductAndAmount.m_second - discountedAmount, 2);
                     double newBalance = MyUtility.roundOff(m_currentBalance - totalDiscountedAmount, 2);
 
                     if(m_currentBalance >= totalDiscountedAmount)
-                        m_balanceTxt.setText(String.valueOf(newBalance));
+                        m_balanceTxt.setText(MyUtility.setDecimalPlaces(2, newBalance));
                     else {
                         m_productTxt.setError(true);
-                        m_balanceTxt.setText(String.format("%.2f", m_currentBalance));
+                        m_balanceTxt.setText(MyUtility.setDecimalPlaces(2, m_currentBalance));
                         MyUtility.showToast(this, "Insufficient balance.", MyUtility.ToastLength.LONG);
                     }
                 }
+                else
+                    MyUtility.showToast(this, "Product \"" + productStr + "\" does not exists.", MyUtility.ToastLength.LONG);
+            }
+            else {
+                m_productTxt.setError(true);
+                MyUtility.showToast(this, "Please specify an amount.", MyUtility.ToastLength.LONG);
             }
         }
-    }
-
-    private void enterPinNumber(final View view, final int amount, final SoldLoadInfo soldLoadInfo) {
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
-        alertDialog.setTitle("PIN");
-
-        final EditText pinNumberTxt = new EditText(this);
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT
-        );
-        pinNumberTxt.setHint("Enter here");
-        pinNumberTxt.setLayoutParams(layoutParams);
-        pinNumberTxt.setInputType(InputType.TYPE_CLASS_NUMBER);
-
-        alertDialog.setView(pinNumberTxt)
-            .setIcon(R.drawable.my_key)
-            .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    final String pinNumber = pinNumberTxt.getText().toString().trim();
-
-                    if(!pinNumber.isEmpty()) {
-                        new AlertDialog.Builder(SellLoadActivity.this)
-                                .setMessage("Do you want to send this to LoadCentral?")
-                                .setCancelable(false)
-                                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        addSellLoad(amount, soldLoadInfo, pinNumber); // TODO - userBalance or actualBalance
-                                    }
-                                })
-                                .setNegativeButton("No", null)
-                                .show();
-                    }
-                }
-            })
-            .setNegativeButton("Cancel", null)
-            .setCancelable(false)
-            .show();
     }
 }
