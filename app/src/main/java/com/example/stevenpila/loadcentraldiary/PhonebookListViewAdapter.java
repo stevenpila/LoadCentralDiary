@@ -14,14 +14,14 @@ import java.util.ArrayList;
  * Created by Steven on 11/30/2015.
  */
 public class PhonebookListViewAdapter extends ArrayAdapter<PhonebookInfo> {
-    ArrayList<PhonebookInfo> m_phonebookInfoFullList;
-    ArrayList<PhonebookInfo> m_phonebookInfoCurrenList;
+    private final ArrayList<PhonebookInfo> m_phonebookInfoFullList;
+    private ArrayList<PhonebookInfo> m_phonebookInfoCurrenList;
 
     public PhonebookListViewAdapter(Context context, ArrayList<PhonebookInfo> phonebookInfos) {
         super(context, 0, phonebookInfos);
 
         m_phonebookInfoFullList = phonebookInfos;
-        m_phonebookInfoCurrenList = new ArrayList<PhonebookInfo>(m_phonebookInfoFullList);
+        m_phonebookInfoCurrenList = new ArrayList<>(m_phonebookInfoFullList);
     }
 
     @Override
@@ -78,7 +78,7 @@ public class PhonebookListViewAdapter extends ArrayAdapter<PhonebookInfo> {
     }
 
     private ArrayList<PhonebookInfo> getResults(String constraint) {
-        ArrayList<PhonebookInfo> results = new ArrayList<PhonebookInfo>();
+        ArrayList<PhonebookInfo> results = new ArrayList<>();
 
         for(PhonebookInfo item : m_phonebookInfoFullList) {
             if(item.m_name.toLowerCase().contains(constraint) || item.m_number.toLowerCase().contains(constraint)) {

@@ -30,7 +30,6 @@ import java.util.ArrayList;
 public class PhonebookActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener{
 
-    private TextView balanceView;
     private ListView m_listView;
     private EditText m_searchTxt;
 //    private NavigationView m_navigationView;
@@ -74,7 +73,7 @@ public class PhonebookActivity extends AppCompatActivity
         View navHeaderView = LayoutInflater.from(this).inflate(R.layout.nav_header_phonebook, null);
         navigationView.addHeaderView(navHeaderView);
 
-        balanceView = (TextView) navHeaderView.findViewById(R.id.balance);
+        TextView balanceView = (TextView) navHeaderView.findViewById(R.id.balance);
         m_searchTxt = (EditText) findViewById(R.id.phonebookSearchEditText);
 
         setCurrentBalance();    // initialize current balance
@@ -109,6 +108,7 @@ public class PhonebookActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            startActivity(new Intent(this, PhonebookSettingsActivity.class));
             return true;
         }
 
@@ -160,7 +160,7 @@ public class PhonebookActivity extends AppCompatActivity
         int position = adapterContextMenuInfo.position;
         PhonebookInfo phonebookInfo = (PhonebookInfo) m_listView.getItemAtPosition(position);
 
-        String messageStr = "";
+//        String messageStr = "";
         switch (item.getItemId()) {
             case R.id.phonebookListViewItemMenuEditItem:
                 Intent editPhonebookIntent = new Intent(this, AddPhonebookActivity.class);
@@ -228,7 +228,7 @@ public class PhonebookActivity extends AppCompatActivity
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        String messageStr = "";
+                        String messageStr;
 
                         if(m_dbHandler.deletePhonebook(phonebookInfo.m_id)) {
                             messageStr = "Successfully deleted \"" + phonebookInfo.m_name + "\".";

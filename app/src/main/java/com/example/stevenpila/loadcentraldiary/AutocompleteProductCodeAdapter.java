@@ -16,9 +16,9 @@ import android.widget.Filter;
  * Created by Steven Pila on 11/20/2015.
  */
 public class AutocompleteProductCodeAdapter extends ArrayAdapter<ProductLoadInfo> {
-    Context m_context;
-    private int m_view_resource_id;
-    private ArrayList<ProductLoadInfo> m_full_product_code_list;
+    private final Context m_context;
+    private final int m_view_resource_id;
+    private final ArrayList<ProductLoadInfo> m_full_product_code_list;
     private ArrayList<ProductLoadInfo> m_current_product_code_list;
 
     public AutocompleteProductCodeAdapter(Context context, int viewResourceId, ArrayList<ProductLoadInfo> product_code_list) {
@@ -44,9 +44,7 @@ public class AutocompleteProductCodeAdapter extends ArrayAdapter<ProductLoadInfo
             textViewCodeItem.setText(Html.fromHtml(productLoadInfo.m_product_view));
             textViewDescItem.setText(productLoadInfo.m_product_description);
         } catch (NullPointerException e) {
-
-        } catch (Exception e) {
-
+            MyUtility.logMessage(m_context, e.getMessage());
         }
 
         return convertView;
@@ -95,11 +93,11 @@ public class AutocompleteProductCodeAdapter extends ArrayAdapter<ProductLoadInfo
         for(ProductLoadInfo item : m_full_product_code_list) {
             if(item.m_product.toLowerCase().contains(constraint)) {
                 String product = item.m_product.toLowerCase();
-                if(product.indexOf("<amount>") > -1) {
+                if(product.contains("<amount>")) {
                     product = product.replace("<amount>", "[amount]");
                 }
                 ProductLoadInfo productLoadInfo = new ProductLoadInfo(item.m_product, item.m_product_description, item.m_discount);
-                if(product.indexOf(constraint) != -1) {
+                if(product.contains(constraint)) {
                     String startPart = product.substring(0, product.indexOf(constraint)).trim();
                     String endPart = product.substring(product.indexOf(constraint) + constraint.length()).trim();
                     String newStr = startPart + "<font color=\"#333333\"><b>" + constraint + "</b></font>" + endPart;

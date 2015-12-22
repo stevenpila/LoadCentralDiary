@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * Created by Steven Pila on 11/18/2015.
  */
 public class PDFFileParser {
-    private String m_file_name;
+    private final String m_file_name;
     private String m_error_message = "";
 
     private final String REGEX_NEW_LINE = "[\\r\\n]+";
@@ -32,7 +32,7 @@ public class PDFFileParser {
     private final String REGEX_GET_VALID_LINE = "([A-z0-9]+|[A-z]+<amount>)(\\s)([0-9]*\\.?[0-9]+%)"; // E.g, SMGT10 0.70%, GMXMAX<amount> 2.75%...
     private final String REGEX_GET_PRODUCT_NAME = "^(.*?)([^\\*\\(])*"; // E.g., E-load, Globe...
     private final String REGEX_IS_VALID_PRODUCT_NAME = "(New|Denoms|Denominations)+";   // E.g., New, Denoms, Denominations...
-    private final String REGEX_IS_WITH_NEW = "^(.*)(New\\!)$";
+    private final String REGEX_IS_WITH_NEW = "^(.*)(New!)$";
     private final String REGEX_GET_PRODUCT_DESCRIPTION = "^(.*?)(?=" + REGEX_GET_VALID_LINE + ")";
 
                     // category     // name             // code
@@ -55,10 +55,10 @@ public class PDFFileParser {
     public boolean loadProductLoadList(Context context) {
         final ArrayList<String> PRODUCT_CATEGORY_LIST =  new ArrayList<>(Arrays.asList(context.getResources().getStringArray(R.array.product_category)));
         m_error_message = "";
-        boolean bRet = true;
+        boolean bRet;
 
         try {
-            StringBuffer output = new StringBuffer();
+//            StringBuilder output = new StringBuilder();
             String filePath = null;
 
             if(m_file_name.equals(DEFAULT_PDF_FILE_NAME)) {
@@ -213,19 +213,19 @@ public class PDFFileParser {
     }
 
     // for testing...
-    public String getProductList() {
-        String strProduct = "";
-
-        for (Map.Entry<String, LinkedHashMap<String, ArrayList<ProductLoadInfo>>> product_name_list : m_product_info_list.entrySet()) {
-            strProduct += product_name_list.getKey() + "\n";
-            for(Map.Entry<String, ArrayList<ProductLoadInfo>> product_code : product_name_list.getValue().entrySet()) {
-                strProduct += "\t" + product_code.getKey() + "\n";
-                for(ProductLoadInfo productLoadInfo : product_code.getValue()) {
-                    strProduct += "\t\t Product: " + productLoadInfo.m_product + " Discount: " + productLoadInfo.m_discount + "\n";
-                }
-            }
-        }
-
-        return strProduct;
-    }
+//    public String getProductList() {
+//        String strProduct = "";
+//
+//        for (Map.Entry<String, LinkedHashMap<String, ArrayList<ProductLoadInfo>>> product_name_list : m_product_info_list.entrySet()) {
+//            strProduct += product_name_list.getKey() + "\n";
+//            for(Map.Entry<String, ArrayList<ProductLoadInfo>> product_code : product_name_list.getValue().entrySet()) {
+//                strProduct += "\t" + product_code.getKey() + "\n";
+//                for(ProductLoadInfo productLoadInfo : product_code.getValue()) {
+//                    strProduct += "\t\t Product: " + productLoadInfo.m_product + " Discount: " + productLoadInfo.m_discount + "\n";
+//                }
+//            }
+//        }
+//
+//        return strProduct;
+//    }
 }

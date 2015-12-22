@@ -1,7 +1,6 @@
 package com.example.stevenpila.loadcentraldiary;
 
 import android.content.Context;
-import android.provider.ContactsContract;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;

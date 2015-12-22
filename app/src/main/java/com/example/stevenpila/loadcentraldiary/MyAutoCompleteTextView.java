@@ -14,14 +14,15 @@ import java.lang.reflect.Field;
  * Created by Steven on 11/29/2015.
  */
 public class MyAutoCompleteTextView extends AutoCompleteTextView {
-    private Drawable m_errorIcon;
-    private Drawable m_normalState;
-    private Drawable m_errorState;
+    private final Drawable m_errorIcon;
+    private final Drawable m_normalState;
+    private final Drawable m_errorState;
 
     public MyAutoCompleteTextView(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
 
         m_errorIcon = context.getResources().getDrawable(R.drawable.my_info_error);
+        assert m_errorIcon != null;
         m_errorIcon.setBounds(0, 0, (int) (m_errorIcon.getIntrinsicWidth() * 0.7), (int) (m_errorIcon.getIntrinsicHeight() * 0.7));
         m_normalState = context.getResources().getDrawable(R.drawable.my_edit_text_normal);
         m_errorState = context.getResources().getDrawable(R.drawable.my_edit_text_error);
@@ -70,14 +71,14 @@ public class MyAutoCompleteTextView extends AutoCompleteTextView {
         setBackground(m_normalState);
     }
 
-    private void setCursor(Object drawable) {
-        try {
-            Field f = TextView.class.getDeclaredField("mCursorDrawableRes");
-            f.setAccessible(true);
-            f.set(this, drawable);
-        }
-        catch (Exception e) {
-            // TODO - set exception error here...
-        }
-    }
+//    private void setCursor(Object drawable) {
+//        try {
+//            Field f = TextView.class.getDeclaredField("mCursorDrawableRes");
+//            f.setAccessible(true);
+//            f.set(this, drawable);
+//        }
+//        catch (Exception e) {
+//            // TODO - set exception error here...
+//        }
+//    }
 }

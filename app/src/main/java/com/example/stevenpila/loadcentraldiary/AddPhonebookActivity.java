@@ -29,7 +29,12 @@ public class AddPhonebookActivity extends AppCompatActivity {
 //                        .setAction("Action", null).show();
 //            }
 //        });
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        assert getSupportActionBar() != null;
+        try {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        } catch (NullPointerException e) {
+            MyUtility.logMessage(this, e.getMessage());
+        }
 
         // jeff
 //        m_rootView = findViewById(android.R.id.content);  // get root view
@@ -63,7 +68,7 @@ public class AddPhonebookActivity extends AppCompatActivity {
         String name = m_nameEditText.getText().toString().trim();
         String number = m_numberEditText.getText().toString().trim();
 
-        String messageStr = "";
+        String messageStr;
         if(m_id > -1)
             if(!m_dbHandler.updatePhoneBook(m_id, name, number))
                 messageStr = "Failed to update contact.";

@@ -13,9 +13,9 @@ public class ProductInfo {
     public boolean m_is_loaded_successful;
 
     public ProductInfo() {
-        m_product_category_list = new ArrayList<String>();
-        m_product_load_info_list = new ArrayList<ProductLoadInfo>();
-        m_product_category_name_list = new HashMap<String, ArrayList<String>>();
+        m_product_category_list = new ArrayList<>();
+        m_product_load_info_list = new ArrayList<>();
+        m_product_category_name_list = new HashMap<>();
         m_is_loaded_successful = false;
     }
 }

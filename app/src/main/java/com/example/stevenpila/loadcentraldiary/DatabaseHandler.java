@@ -85,7 +85,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     // member variables
     private String m_error_message = "";
-    private Context m_context;
+    private final Context m_context;
 
     public DatabaseHandler(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);

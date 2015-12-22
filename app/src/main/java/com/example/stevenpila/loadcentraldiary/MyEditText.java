@@ -18,14 +18,15 @@ import java.lang.reflect.Field;
  * Created by Steven on 11/27/2015.
  */
 public class MyEditText extends EditText {
-    private Drawable m_errorIcon;
-    private Drawable m_normalState;
-    private Drawable m_errorState;
+    private final Drawable m_errorIcon;
+    private final Drawable m_normalState;
+    private final Drawable m_errorState;
 
     public MyEditText(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
 
         m_errorIcon = context.getResources().getDrawable(R.drawable.my_info_error);
+        assert m_errorIcon != null;
         m_errorIcon.setBounds(0, 0, (int) (m_errorIcon.getIntrinsicWidth() * 0.7), (int) (m_errorIcon.getIntrinsicHeight() * 0.7));
         m_normalState = context.getResources().getDrawable(R.drawable.my_edit_text_normal);
         m_errorState = context.getResources().getDrawable(R.drawable.my_edit_text_error);

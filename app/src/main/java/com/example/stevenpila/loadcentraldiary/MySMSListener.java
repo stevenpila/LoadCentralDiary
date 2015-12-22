@@ -7,9 +7,6 @@ import android.os.Bundle;
 import android.telephony.SmsMessage;
 
 import java.util.ArrayList;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created by Steven on 12/6/2015.
@@ -36,29 +33,29 @@ public class MySMSListener extends BroadcastReceiver {
             if(extras != null) {
                 Object[] smsExtras = (Object[]) extras.get(PDUS);
 
-                for(int i = 0; i < smsExtras.length; ++i) {
-                    SmsMessage smsMessage = SmsMessage.createFromPdu((byte[]) smsExtras[i]);
+                if(smsExtras != null) {
+                    for(Object object: smsExtras){
+                        SmsMessage smsMessage = SmsMessage.createFromPdu((byte[]) object);
 
-                    String msgBody = smsMessage.getMessageBody().toString();
-                    String msgSrc = getAlternateNumber(smsMessage.getOriginatingAddress());
+                        String msgBody = smsMessage.getMessageBody();
+                        String msgSrc = getAlternateNumber(smsMessage.getOriginatingAddress());
 
-                    if(accessNumbers.contains(msgSrc))
-                        processMessage(arg0, msgBody, msgSrc);
-                    else {
-//                        messageStr += "Ignored SMS from " + msgSrc; // not from any of the loadcentral access numbers
-//                        MyUtility.showToast(arg0, messageStr, MyUtility.ToastLength.LONG);
+                        if(accessNumbers.contains(msgSrc)) {
+                            processMessage(arg0, msgBody, msgSrc);
+                            arg0.unregisterReceiver(this);
+                        }
+                        else
+                            MyUtility.logMessage(arg0, "Ignored SMS: " + msgSrc + " - " + msgBody);
                     }
                 }
-
-                MyUtility.showToast(arg0, "MySMSListener::onReceive - Finished.", MyUtility.ToastLength.LONG);
-                arg0.unregisterReceiver(this);
             }
         }
+        MyUtility.showToast(arg0, "MySMSListener::onReceive - Finished.", MyUtility.ToastLength.LONG);
     }
 
     private void processMessage(Context context, String message, String number) {
         String balance = MyUtility.getStringFromRegex(message, REGEX_GET_CURRENT_BALANCE);
-        if(message.indexOf(".") > -1 && !balance.isEmpty()) {
+        if(message.contains(".") && !balance.isEmpty()) {
             String tempMsg = message.substring(0, message.indexOf(MyUtility.DOT));    // get message with product and number
             double dBalance = (balance.isEmpty()) ? -1 : Double.parseDouble(balance);
 

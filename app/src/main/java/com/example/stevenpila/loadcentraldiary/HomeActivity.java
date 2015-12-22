@@ -1,11 +1,8 @@
 package com.example.stevenpila.loadcentraldiary;
 
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -20,7 +17,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -29,7 +25,6 @@ import java.util.ArrayList;
 public class HomeActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    private TextView balanceView;
     private ListView m_listView;
 //    private NavigationView m_navigationView;
 
@@ -71,7 +66,7 @@ public class HomeActivity extends AppCompatActivity
         View navHeaderView = LayoutInflater.from(this).inflate(R.layout.nav_header_home, null);
         navigationView.addHeaderView(navHeaderView);
 
-        balanceView = (TextView) navHeaderView.findViewById(R.id.balance);
+        TextView balanceView = (TextView) navHeaderView.findViewById(R.id.balance);
 
         setCurrentBalance();    // initialize current balance
         MyUtility.setTextViewValue(balanceView, m_currentBalance); // initializes the current balance upon application start
@@ -207,7 +202,7 @@ public class HomeActivity extends AppCompatActivity
         int position = adapterContextMenuInfo.position;
         HistoryRecordInfo historyRecordInfo = (HistoryRecordInfo) m_listView.getItemAtPosition(position);
 
-        String messageStr = "";
+        String messageStr;
         switch (item.getItemId()) {
             case R.id.paidItem:
                 if(m_dbHandler.setSellLoadPaid(historyRecordInfo.mSoldLoadInfo.m_id)) {

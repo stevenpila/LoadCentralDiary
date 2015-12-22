@@ -33,8 +33,8 @@ import java.util.regex.Pattern;
  * Created by Steven on 11/10/2015.
  */
 public class MyUtility {
-    static public char PESO_SIGN = 0x20B1;
-    static public int TABLE_EMPTY = -5;
+    static public final char PESO_SIGN = 0x20B1;
+    static public final int TABLE_EMPTY = -5;
     public enum DirectoryType {
         ROOT,
         FILES,
@@ -45,8 +45,8 @@ public class MyUtility {
         SHORT,
         LONG
     }
-    static public String DOT = ".";
-    static public String COMMA = ",";
+    static public final String DOT = ".";
+    static public final String COMMA = ",";
 
     static public String getCurrentDateTime() {
         Calendar c = Calendar.getInstance();
@@ -222,6 +222,10 @@ public class MyUtility {
         Log.v(context.getPackageName() + ".log", logMessage);
     }
 
+    static public void logMessage(Context context, String logMessage) {
+        Log.v(context.getPackageName() + ".log", logMessage);
+    }
+
     static public void sendSMS(Context context, String number, String message) {
         String SENT_SMS_ACTION = "SMS_SENT";
         String DELIVERED_SMS_ACTION = "SMS_DELIVERED";
@@ -297,7 +301,7 @@ public class MyUtility {
     }
 
     static public void showNotification(Context context, String title, String content) {
-        Intent intent = new Intent(context, HomeActivity.class);
+//        Intent intent = new Intent(context, HomeActivity.class);  // TODO - use this later on...
 //        PendingIntent pendingIntent = PendingIntent.getActivity(context, (int) System.currentTimeMillis(), intent, 0);
 
         Notification notification = new Notification.Builder(context)

@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -28,10 +27,7 @@ import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
 import java.util.ArrayList;
-import java.util.List;
 
 public class SellLoadActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -231,7 +227,7 @@ public class SellLoadActivity extends AppCompatActivity
             String tempProductStr = productStr;
             double tempDiscount = -2;
             for (MyUtility.Pair<String, MyUtility.Pair<Double, MyUtility.Pair<Integer, Integer>>> productCodeWithInfo : m_productCodesWithAmount) {
-                if(productCodeWithInfo.m_first.indexOf(ProductAndAmount.m_first) > -1) {
+                if(productCodeWithInfo.m_first.contains(ProductAndAmount.m_first)) {
                     tempDiscount = -1;
                     tempProductStr = productCodeWithInfo.m_first;
                     if(ProductAndAmount.m_second >= productCodeWithInfo.m_second.m_second.m_first && ProductAndAmount.m_second <= productCodeWithInfo.m_second.m_second.m_second) {
@@ -510,7 +506,7 @@ public class SellLoadActivity extends AppCompatActivity
             if(ProductAndAmount.m_second > 0) {
                 double tempDiscount = -2;
                 for (MyUtility.Pair<String, MyUtility.Pair<Double, MyUtility.Pair<Integer, Integer>>> productCodeWithInfo : m_productCodesWithAmount) {
-                    if(productCodeWithInfo.m_first.indexOf(ProductAndAmount.m_first) > -1) {
+                    if(productCodeWithInfo.m_first.contains(ProductAndAmount.m_first)) {
                         productStr = productCodeWithInfo.m_first;
                         tempDiscount = -1;
                         if(ProductAndAmount.m_second >= productCodeWithInfo.m_second.m_second.m_first && ProductAndAmount.m_second <= productCodeWithInfo.m_second.m_second.m_second) {
