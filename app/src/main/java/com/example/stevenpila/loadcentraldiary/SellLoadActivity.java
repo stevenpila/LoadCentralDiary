@@ -2,6 +2,7 @@ package com.example.stevenpila.loadcentraldiary;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -21,8 +22,9 @@ import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.TextView;
@@ -85,6 +87,7 @@ public class SellLoadActivity extends AppCompatActivity
         MyUtility.setTextViewValue(m_balanceView, m_currentBalance); // initializes the current balance upon application start
         m_balanceTxt.setText(MyUtility.setDecimalPlaces(2, m_currentBalance)); // initializes the current balance upon application start
 
+        m_dateTxt.setInputType(InputType.TYPE_NULL);
         m_dateTxt.setText(MyUtility.getCurrentDate());    // set default value to current date (format: yyyy-mm-dd)
         m_productTxt.setOnFocusChangeListener(new View.OnFocusChangeListener() {   // if value is empty, set to default value of 0.0
             @Override
@@ -103,7 +106,7 @@ public class SellLoadActivity extends AppCompatActivity
                     m_isFocusBalanceTxt = false;
 
                     if (m_balanceTxt.getText().toString().isEmpty()) {
-                        m_balanceTxt.setText("0.00");
+                        m_balanceTxt.setText(MyUtility.setDecimalPlaces(2, m_currentBalance));
                     }
                 } else {    // if focus
                     m_isFocusBalanceTxt = true;
@@ -117,14 +120,21 @@ public class SellLoadActivity extends AppCompatActivity
         m_productTxt.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                ProductLoadInfo productLoadInfo = (ProductLoadInfo) parent.getAdapter().getItem(position);
+                ProductCodeInfo productCodeInfo = (ProductCodeInfo) parent.getAdapter().getItem(position);
 
-                m_productTxt.setText(productLoadInfo.m_product.replace("<amount>", ""));
-                calculateNewBalance(productLoadInfo.m_product.replace("<amount>", ""));
+                m_productTxt.setText(productCodeInfo.mProduct.replace("<amount>", ""));
+                calculateNewBalance(productCodeInfo.mProduct.replace("<amount>", ""));
             }
         });
-        ArrayList<ProductLoadInfo> full_product_code_list = m_dbHandler.getProductCodeList();
-        ArrayAdapter<ProductLoadInfo> autocompleteAdapter = new AutocompleteProductCodeAdapter(this, R.layout.list_view_item_sell_load, full_product_code_list);
+        m_dateTxt.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                showDatePickerDialog();
+            }
+        });
+        ArrayList<ProductCodeInfo> full_product_code_list = m_dbHandler.getProductCodeList();
+        ArrayAdapter<ProductCodeInfo> autocompleteAdapter = new AutocompleteProductCodeAdapter(this, R.layout.list_view_item_sell_load, full_product_code_list);
         m_productTxt.setAdapter(autocompleteAdapter);
         m_productTxt.setBackground(getResources().getDrawable(R.drawable.my_edit_text_normal));
         m_productCodesWithAmount = m_dbHandler.getProductCodeWithAmount();
@@ -190,6 +200,12 @@ public class SellLoadActivity extends AppCompatActivity
     }
 
     // jeff
+    public void showDatePickerDialog() {
+        MyDatePickerDialog myDatePickerDialog = new MyDatePickerDialog();
+        myDatePickerDialog.setEditText(m_dateTxt);
+        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+        myDatePickerDialog.show(fragmentTransaction, "DatePicker");
+    }
     public void initializeFields(View view) {
         m_dateTxt = (MyEditText) findViewById(R.id.dateTxt);
         m_numberTxt = (MyEditText) findViewById(R.id.numberTxt);
@@ -251,8 +267,8 @@ public class SellLoadActivity extends AppCompatActivity
                 double actualBalance = Double.parseDouble(MyUtility.setDecimalPlaces(2, m_currentBalance - totalDiscountedAmount));
 
                 if(m_currentBalance >= totalDiscountedAmount) {
-                    SoldLoadInfo soldLoadInfo = new SoldLoadInfo(0, productStr, numberStr, dateTimeStr, userBalance, descStr, m_isPaid, false); // TODO - userBalance or actualBalance?
-                    confirmSellLoadInfoDialog(soldLoadInfo, ProductAndAmount.m_second, userBalance, actualBalance);
+                    SoldLoadInfo soldLoadInfo = new SoldLoadInfo(-1, productStr, totalDiscountedAmount, numberStr, dateTimeStr, userBalance, descStr, m_isPaid); // TODO - userBalance or actualBalance?
+                    confirmSellLoadInfoDialog(soldLoadInfo, userBalance, actualBalance);
                 }
                 else {
                     m_productTxt.setError(true);
@@ -268,7 +284,9 @@ public class SellLoadActivity extends AppCompatActivity
     public void clearButtonOnClick(View view) {
         m_dateTxt.setText(MyUtility.getCurrentDate());
         m_numberTxt.setText("");
+        m_numberTxt.setError(false);
         m_productTxt.setText("");
+        m_productTxt.setError(false);
         m_descriptionTxt.setText("");
 
         if(m_isFocusBalanceTxt)
@@ -293,9 +311,9 @@ public class SellLoadActivity extends AppCompatActivity
             }
     }
 
-    private void confirmSellLoadInfoDialog(final SoldLoadInfo soldLoadInfo, final int amount, final double userBalance, final double actualBalance) {
-        String dialogMessage = "Product: " + soldLoadInfo.m_product + "\n" +
-                "Number: " + soldLoadInfo.m_number + "\n" +
+    private void confirmSellLoadInfoDialog(final SoldLoadInfo soldLoadInfo, final double userBalance, final double actualBalance) {
+        String dialogMessage = "Product: " + soldLoadInfo.mProduct + "\n" +
+                "Number: " + soldLoadInfo.mNumber + "\n" +
                 "Balance: " + userBalance + " (Actual: " + actualBalance + ")";
 
         new AlertDialog.Builder(this)
@@ -306,16 +324,16 @@ public class SellLoadActivity extends AppCompatActivity
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         if (userBalance != actualBalance)
-                            confirmUserBalanceDialog(soldLoadInfo, amount, actualBalance);
+                            confirmUserBalanceDialog(soldLoadInfo, actualBalance);
                         else
-                            confirmSendToLoadCentralDialog(amount, soldLoadInfo);
+                            confirmSendToLoadCentralDialog(soldLoadInfo);
                     }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
-    private void confirmUserBalanceDialog(final SoldLoadInfo soldLoadInfo, final int amount, final double actualBalance) {
-        String dialogMessage = "Your balance (" + MyUtility.setDecimalPlaces(2, soldLoadInfo.m_balance) + ") is not equal to the actual balance (" + MyUtility.setDecimalPlaces(2, actualBalance) + ").\n\n" +
+    private void confirmUserBalanceDialog(final SoldLoadInfo soldLoadInfo, final double actualBalance) {
+        String dialogMessage = "Your balance (" + MyUtility.setDecimalPlaces(2, soldLoadInfo.mBalance) + ") is not equal to the actual balance (" + MyUtility.setDecimalPlaces(2, actualBalance) + ").\n\n" +
                 "Are you sure you want to proceed?";
 
         new AlertDialog.Builder(this)
@@ -324,68 +342,71 @@ public class SellLoadActivity extends AppCompatActivity
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        confirmSendToLoadCentralDialog(amount, soldLoadInfo);
+                        confirmSendToLoadCentralDialog(soldLoadInfo);
                     }
                 })
                 .setNegativeButton("No", null)
                 .show();
     }
-    private void confirmSendToLoadCentralDialog(final int amount, final SoldLoadInfo soldLoadInfo) {
+    private void confirmSendToLoadCentralDialog(final SoldLoadInfo soldLoadInfo) {
         new AlertDialog.Builder(this)
                 .setMessage("Do you want to send this to LoadCentral?")
                 .setCancelable(false)
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            AlertDialog.Builder alertDialog = new AlertDialog.Builder(SellLoadActivity.this);
-                            alertDialog.setTitle("PIN");
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                View customPINView = getLayoutInflater().inflate(R.layout.dialog_pin_sell_load, null);
+                                final EditText PINTxt = (EditText) customPINView.findViewById(R.id.dialogPinSellLoadPINTxt);
+                                final CheckBox showPIN = (CheckBox) customPINView.findViewById(R.id.dialogPinSellLoadShowPIN);
 
-                            final EditText pinNumberTxt = new EditText(SellLoadActivity.this);
+                                showPIN.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                                    @Override
+                                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                                        if (isChecked)
+                                            PINTxt.setInputType(InputType.TYPE_NUMBER_VARIATION_NORMAL);
+                                        else
+                                            PINTxt.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
 
-                            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                                    LinearLayout.LayoutParams.MATCH_PARENT,
-                                    LinearLayout.LayoutParams.MATCH_PARENT
-                            );
-                            pinNumberTxt.setHint("Enter here");
-                            pinNumberTxt.setLayoutParams(layoutParams);
-                            pinNumberTxt.setInputType(InputType.TYPE_CLASS_NUMBER);
+                                        PINTxt.setSelection(PINTxt.getText().length());
+                                    }
+                                });
 
-                            alertDialog.setView(pinNumberTxt)
-                                    .setIcon(R.drawable.my_key)
-                                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            final String pinNumber = pinNumberTxt.getText().toString().trim();
+                                new AlertDialog.Builder(SellLoadActivity.this)
+                                        .setView(customPINView)
+                                        .setTitle("PIN")
+                                        .setIcon(R.drawable.my_key)
+                                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which) {
+                                                final String pinNumber = PINTxt.getText().toString().trim();
 
-                                            if (!pinNumber.isEmpty())
-                                                addSellLoad(amount, soldLoadInfo, pinNumber);
-                                        }
-                                    })
-                                    .setNegativeButton("Cancel", null)
-                                    .setCancelable(false)
-                                    .show();
+                                                if (!pinNumber.isEmpty())
+                                                    addSellLoad(soldLoadInfo, pinNumber);
+                                            }
+                                        })
+                                        .setNegativeButton("Cancel", null)
+                                        .setCancelable(false)
+                                        .show();
+                            }
                         }
-                    }
                 )
                 .setNegativeButton("No", null)
                 .show();
     }
 
-    private void addSellLoad(int amount, SoldLoadInfo soldLoadInfo, String pinNumber) {
-        double newAmount = Double.parseDouble(String.valueOf(amount));
-
-        long newId = m_dbHandler.addSellLoad(soldLoadInfo.m_dateTime, soldLoadInfo.m_number, soldLoadInfo.m_product, newAmount, soldLoadInfo.m_balance, soldLoadInfo.m_description, soldLoadInfo.m_isPaid);
+    private void addSellLoad(SoldLoadInfo soldLoadInfo, String pinNumber) {
+        long newId = m_dbHandler.addSellLoad(1, soldLoadInfo.mDatetime, soldLoadInfo.mNumber, soldLoadInfo.mProduct, soldLoadInfo.mAmount, soldLoadInfo.mBalance, soldLoadInfo.mDescription, soldLoadInfo.mIsPaid);
         String insertMessage;
 
         if(newId < 0) // add new sell load failed
-            insertMessage = "Failed to sold " + soldLoadInfo.m_product + " to " + soldLoadInfo.m_number + ".";
+            insertMessage = "Failed to sold " + soldLoadInfo.mProduct + " to " + soldLoadInfo.mNumber + ".";
         else {
-            insertMessage = "Successfully sold " + soldLoadInfo.m_product + " to " + soldLoadInfo.m_number + ".";
+            insertMessage = "Successfully sold " + soldLoadInfo.mProduct + " to " + soldLoadInfo.mNumber + ".";
 
-            MyUtility.setTextViewValue(m_balanceView, soldLoadInfo.m_balance); // add deposited amount to current balance
-            m_currentBalance = soldLoadInfo.m_balance;
+            MyUtility.setTextViewValue(m_balanceView, soldLoadInfo.mBalance); // add deposited amount to current balance
+            m_currentBalance = soldLoadInfo.mBalance;
 
-            String loadMessage = MyUtility.createSellLoadFormat(soldLoadInfo.m_product, pinNumber, soldLoadInfo.m_number);
+            String loadMessage = MyUtility.createSellLoadFormat(soldLoadInfo.mProduct, pinNumber, soldLoadInfo.mNumber);
 
             chooseFromAccessNumbers(loadMessage);
         }
@@ -478,6 +499,8 @@ public class SellLoadActivity extends AppCompatActivity
                 TextView text1 = (TextView) view.findViewById(android.R.id.text1);
                 TextView text2 = (TextView) view.findViewById(android.R.id.text2);
 
+                ((ViewGroup.MarginLayoutParams) text1.getLayoutParams()).leftMargin = 20;
+
                 String numberStr = (String) getItem(position);
                 String numberAndType[] = numberStr.split(",");
 
@@ -518,6 +541,7 @@ public class SellLoadActivity extends AppCompatActivity
                 }
                 if(tempDiscount == -1) {
                     MyUtility.showToast(this, "Amount (" + ProductAndAmount.m_second + ") is too low/high." , MyUtility.ToastLength.LONG);
+                    m_productTxt.setError(true);
                     return;
                 }
                 double productDiscount;

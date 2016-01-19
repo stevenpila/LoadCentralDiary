@@ -4,23 +4,51 @@ package com.example.stevenpila.loadcentraldiary;
  * Created by Steven on 11/14/2015.
  */
 public class SoldLoadInfo {
-    public int m_id;
-    public String m_product;
-    public String m_number;
-    public String m_dateTime;
-    public double m_balance;
-    public String m_description;
-    public boolean m_isPaid;
-    public boolean m_isValidated;
+    public int mId;
+    public String mProduct;
+    public double mAmount;
+    public String mNumber;
+    public String mNumberName;
+    public String mDatetime;
+    public double mBalance;
+    public String mDescription;
+    public boolean mIsPaid;
 
-    public SoldLoadInfo(int id, String product, String number, String dateTime, double balance, String description, boolean isPaid, boolean isValid) {
-        m_id = id;
-        m_product = product;
-        m_number = number;
-        m_dateTime = dateTime;
-        m_balance = balance;
-        m_description = description;
-        m_isPaid = isPaid;
-        m_isValidated = isValid;
+    public ProductInfo mProductInfo;
+
+    public SoldLoadInfo(int id, String product, double amount, String number, String dateTime, double balance, String description, boolean isPaid) {
+        mId = id;
+        mProduct = product;
+        mAmount = amount;
+        mNumber = number;
+        mDatetime = dateTime;
+        mBalance = balance;
+        mDescription = description;
+        mIsPaid = isPaid;
+    }
+    public SoldLoadInfo(int id, String product, double amount, String number, String dateTime, double balance, String description, boolean isPaid, ProductInfo productInfo) {
+        mId = id;
+        mProduct = product;
+        mAmount = amount;
+        mNumber = number;
+        mDatetime = dateTime;
+        mBalance = balance;
+        mDescription = description;
+        mIsPaid = isPaid;
+
+        mProductInfo = productInfo;
+    }
+    public SoldLoadInfo(int id, String product, double amount, String number, String numberName, String dateTime, double balance, String description, boolean isPaid, ProductInfo productInfo) {
+        mId = id;
+        mProduct = product;
+        mAmount = amount;
+        mNumber = number;
+        mNumberName = numberName;
+        mDatetime = dateTime;
+        mBalance = balance;
+        mDescription = description;
+        mIsPaid = isPaid;
+
+        mProductInfo = productInfo;
     }
 }

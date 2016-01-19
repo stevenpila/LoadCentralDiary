@@ -11,4 +11,8 @@
     <item android:id="@+id/deleteItem"
         android:icon="@android:drawable/ic_menu_delete"
         android:title="@string/menu_delete" />
+
+    <item android:id="@+id/detailsItem"
+        android:icon="@android:drawable/ic_menu_info_details"
+        android:title="@string/menu_details" />
 </menu>

@@ -15,7 +15,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,7 +35,7 @@ public class PDFFileParser {
     private final String REGEX_GET_PRODUCT_DESCRIPTION = "^(.*?)(?=" + REGEX_GET_VALID_LINE + ")";
 
                     // category     // name             // code
-    private LinkedHashMap<String, LinkedHashMap<String, ArrayList<ProductLoadInfo>>> m_product_info_list;
+    private LinkedHashMap<String, LinkedHashMap<String, ArrayList<ProductCodeInfo>>> m_product_info_list;
 
     private final String DEFAULT_PDF_FILE_NAME = "11-15.pdf";
 
@@ -100,10 +99,10 @@ public class PDFFileParser {
                                 for (int length = splitLine.length, index = 0; length > 1; length /= 2) {
                                     if (!currentProductCategory.isEmpty() && !currentProductName.isEmpty()) {
                                         String productDescription = getProductDescription(line.trim());
-                                        ProductLoadInfo productLoadInfo = new ProductLoadInfo(splitLine[index++].trim(), productDescription, splitLine[index++].trim());
-                                        //                                    m_response += "\t\tProduct: " + productLoadInfo.m_product + " Discount: " + productLoadInfo.m_discount + "\n";
+                                        ProductCodeInfo productCodeInfo = new ProductCodeInfo(splitLine[index++].trim(), productDescription, splitLine[index++].trim());
+                                        //                                    m_response += "\t\tProduct: " + productCodeInfo.m_product + " Discount: " + productCodeInfo.m_discount + "\n";
                                         if (m_product_info_list.get(currentProductCategory) != null && m_product_info_list.get(currentProductCategory).get(currentProductName) != null)
-                                            m_product_info_list.get(currentProductCategory).get(currentProductName).add(productLoadInfo);
+                                            m_product_info_list.get(currentProductCategory).get(currentProductName).add(productCodeInfo);
                                     }
                                 }
                             }
@@ -125,7 +124,7 @@ public class PDFFileParser {
                                         currentProductCategory = strProduct;
                                         //                                    m_response += currentProductCategory + "\n";
                                         if (m_product_info_list.get(currentProductCategory) == null)
-                                            m_product_info_list.put(currentProductCategory, new LinkedHashMap<String, ArrayList<ProductLoadInfo>>());
+                                            m_product_info_list.put(currentProductCategory, new LinkedHashMap<String, ArrayList<ProductCodeInfo>>());
                                     } else {   // product name
                                         if (!isHeaderRemoved) {  // skip header row
                                             isHeaderRemoved = true;
@@ -138,7 +137,7 @@ public class PDFFileParser {
                                             currentProductName = strProduct;
                                         //                                    m_response += "\t" + currentProductName + "\n";
                                         if (m_product_info_list.get(currentProductCategory) != null && m_product_info_list.get(currentProductCategory).get(currentProductName) == null)
-                                            m_product_info_list.get(currentProductCategory).put(currentProductName, new ArrayList<ProductLoadInfo>());
+                                            m_product_info_list.get(currentProductCategory).put(currentProductName, new ArrayList<ProductCodeInfo>());
                                     }
                                 }
                             }
@@ -206,7 +205,7 @@ public class PDFFileParser {
         return !matcher.find();
     }
 
-    public LinkedHashMap<String, LinkedHashMap<String, ArrayList<ProductLoadInfo>>> getProductInfoList() { return m_product_info_list; }
+    public LinkedHashMap<String, LinkedHashMap<String, ArrayList<ProductCodeInfo>>> getProductInfoList() { return m_product_info_list; }
     public boolean isProductInfoListEmpty() { return m_product_info_list.isEmpty(); }
     public String getErrorMessage() {
         return m_error_message;
@@ -216,11 +215,11 @@ public class PDFFileParser {
 //    public String getProductList() {
 //        String strProduct = "";
 //
-//        for (Map.Entry<String, LinkedHashMap<String, ArrayList<ProductLoadInfo>>> product_name_list : m_product_info_list.entrySet()) {
+//        for (Map.Entry<String, LinkedHashMap<String, ArrayList<ProductCodeInfo>>> product_name_list : m_product_info_list.entrySet()) {
 //            strProduct += product_name_list.getKey() + "\n";
-//            for(Map.Entry<String, ArrayList<ProductLoadInfo>> product_code : product_name_list.getValue().entrySet()) {
+//            for(Map.Entry<String, ArrayList<ProductCodeInfo>> product_code : product_name_list.getValue().entrySet()) {
 //                strProduct += "\t" + product_code.getKey() + "\n";
-//                for(ProductLoadInfo productLoadInfo : product_code.getValue()) {
+//                for(ProductCodeInfo productLoadInfo : product_code.getValue()) {
 //                    strProduct += "\t\t Product: " + productLoadInfo.m_product + " Discount: " + productLoadInfo.m_discount + "\n";
 //                }
 //            }

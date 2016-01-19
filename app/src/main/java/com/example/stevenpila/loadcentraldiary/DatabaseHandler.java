@@ -49,7 +49,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     // sell load
     static public final String TABLE_SELL_LOAD = "sell_load";
     private final String SELL_LOAD_COLUMN_ID = "id";
-    private final String SELL_LOAD_COLUMN_PRODUCT = "product";
+    private final String SELL_LOAD_COLUMN_PRODUCT_CODE_ID = "product_code_id";
+    private final String SELL_LOAD_COLUMN_PRODUCT = "product"; // TODO - to be removed...
     private final String SELL_LOAD_COLUMN_AMOUNT = "amount";
     private final String SELL_LOAD_COLUMN_NUMBER = "number";
     private final String SELL_LOAD_COLUMN_BALANCE = "balance";
@@ -57,7 +58,6 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     private final String SELL_LOAD_COLUMN_DATETIME_SOLD = "datetime_sold";
     private final String SELL_LOAD_COLUMN_STATUS = "status";
     private final String SELL_LOAD_COLUMN_DATETIME_PAID = "datetime_paid";
-    private final String SELL_LOAD_COLUMN_VALIDATED = "is_validated";
 
     // balance
     private final String TABLE_BALANCE = "balance";
@@ -180,6 +180,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         String CREATE_SELL_LOAD_TABLE = "CREATE TABLE IF NOT EXISTS " +
                 TABLE_SELL_LOAD + "(" +
                 SELL_LOAD_COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                SELL_LOAD_COLUMN_PRODUCT_CODE_ID + " INTEGER NOT NULL, " +
                 SELL_LOAD_COLUMN_PRODUCT + " TEXT NOT NULL, " +
                 SELL_LOAD_COLUMN_AMOUNT + " DOUBLE NOT NULL, " +
                 SELL_LOAD_COLUMN_NUMBER + " TEXT NOT NULL, " +
@@ -187,9 +188,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                 SELL_LOAD_COLUMN_DESCRIPTION + " TEXT DEFAULT '', " +
                 SELL_LOAD_COLUMN_DATETIME_SOLD + " DATETIME NOT NULL, " +
                 SELL_LOAD_COLUMN_STATUS + " BOOLEAN NOT NULL, " +
-                SELL_LOAD_COLUMN_DATETIME_PAID + " DATETIME, " +
-                SELL_LOAD_COLUMN_VALIDATED + " BOOLEAN DEFAULT FALSE" + ")";
-//                SELL_LOAD_COLUMN_DATETIME_INSERTED + "DATETIME"
+                SELL_LOAD_COLUMN_DATETIME_PAID + " DATETIME " + ")";
 
         db.execSQL(CREATE_SELL_LOAD_TABLE);
     }
@@ -233,14 +232,14 @@ public class DatabaseHandler extends SQLiteOpenHelper {
             db.beginTransaction();
 
             try {
-                for (Map.Entry<String, LinkedHashMap<String, ArrayList<ProductLoadInfo>>> product_name_list : pdfFileParser.getProductInfoList().entrySet()) {
+                for (Map.Entry<String, LinkedHashMap<String, ArrayList<ProductCodeInfo>>> product_name_list : pdfFileParser.getProductInfoList().entrySet()) {
                     long category_id = addProductCategory(db, product_name_list.getKey());
                     if(category_id  < 0) {
                         bRet = false;
                         break;
                     }
 
-                    for(Map.Entry<String, ArrayList<ProductLoadInfo>> product_code : product_name_list.getValue().entrySet()) {
+                    for(Map.Entry<String, ArrayList<ProductCodeInfo>> product_code : product_name_list.getValue().entrySet()) {
                         long name_id = addProductName(db, category_id, product_code.getKey());
                         if(name_id  < 0) {
                             bRet = false;
@@ -282,7 +281,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
         return db.insert(TABLE_PRODUCT_NAME, null, values);
     }
-    private void addProductCodes(SQLiteDatabase db, long product_name_id, ArrayList<ProductLoadInfo> productLoadInfos) {
+    private void addProductCodes(SQLiteDatabase db, long product_name_id, ArrayList<ProductCodeInfo> productCodeInfos) {
         String insertQuery = "INSERT INTO " +
                 TABLE_PRODUCT_CODE + " (" +
                 PRODUCT_CODE_COLUMN_PRODUCT_NAME_ID + ", " +
@@ -293,11 +292,11 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
         SQLiteStatement sqLiteStatement = db.compileStatement(insertQuery);
 
-        for(ProductLoadInfo productLoadInfo: productLoadInfos) {
+        for(ProductCodeInfo productCodeInfo : productCodeInfos) {
             sqLiteStatement.bindLong(1, product_name_id);    // PRODUCT_CODE_COLUMN_PRODUCT_NAME_ID
-            sqLiteStatement.bindString(2, productLoadInfo.m_product);   // PRODUCT_CODE_COLUMN_CODE
-            sqLiteStatement.bindString(3, productLoadInfo.m_product_description);   // PRODUCT_CODE_COLUMN_DESCRIPTION
-            sqLiteStatement.bindDouble(4, productLoadInfo.m_discount);  // PRODUCT_CODE_COLUMN_DISCOUNT
+            sqLiteStatement.bindString(2, productCodeInfo.mProduct);   // PRODUCT_CODE_COLUMN_CODE
+            sqLiteStatement.bindString(3, productCodeInfo.mProductDescription);   // PRODUCT_CODE_COLUMN_DESCRIPTION
+            sqLiteStatement.bindDouble(4, productCodeInfo.mDiscount);  // PRODUCT_CODE_COLUMN_DISCOUNT
 
             sqLiteStatement.execute();
             sqLiteStatement.clearBindings();
@@ -325,8 +324,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         return discount;
     }
 
-    public ArrayList<ProductLoadInfo> getProductCodeList() {
-        ArrayList<ProductLoadInfo> product_code_list = new ArrayList<>();
+    public ArrayList<ProductCodeInfo> getProductCodeList() {
+        ArrayList<ProductCodeInfo> product_code_list = new ArrayList<>();
         String selectQuery = "SELECT " +
                 PRODUCT_CODE_COLUMN_CODE + ", " +
                 PRODUCT_CODE_COLUMN_DESCRIPTION + ", " +
@@ -342,8 +341,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                 String productDesc = cursor.getString(cursor.getColumnIndex(PRODUCT_CODE_COLUMN_DESCRIPTION));
                 double productDisc = cursor.getDouble(cursor.getColumnIndex(PRODUCT_CODE_COLUMN_DISCOUNT));
 
-                ProductLoadInfo productLoadInfo = new ProductLoadInfo(productCode, productDesc, productDisc);
-                product_code_list.add(productLoadInfo);
+                ProductCodeInfo productCodeInfo = new ProductCodeInfo(productCode, productDesc, productDisc);
+                product_code_list.add(productCodeInfo);
             } while (cursor.moveToNext());
         }
 
@@ -422,8 +421,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         return newId;
     }
 
-    public long addSellLoad(String dateTime, String number, String product, double amount, double balance, String description, boolean isPaid) {
+    public long addSellLoad(int productCodeID, String dateTime, String number, String product, double amount, double balance, String description, boolean isPaid) {
         ContentValues values = new ContentValues();
+        values.put(SELL_LOAD_COLUMN_PRODUCT_CODE_ID, productCodeID);
         values.put(SELL_LOAD_COLUMN_PRODUCT, product);
         values.put(SELL_LOAD_COLUMN_AMOUNT, amount);
         values.put(SELL_LOAD_COLUMN_NUMBER, number);
@@ -431,7 +431,6 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         values.put(SELL_LOAD_COLUMN_DESCRIPTION, description);
         values.put(SELL_LOAD_COLUMN_DATETIME_SOLD, dateTime);
         values.put(SELL_LOAD_COLUMN_STATUS, isPaid);
-        values.put(SELL_LOAD_COLUMN_VALIDATED, false);  // set to default
 
         SQLiteDatabase db = this.getWritableDatabase();
         db.beginTransaction();
@@ -461,7 +460,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
         return bRet;
     }
-//    public boolean getSellLoadList(ListViewAdapter listViewAdapter) {
+//    public boolean getSellLoadList(TransactionRecordListViewAdapter listViewAdapter) {
 //        boolean bRet = true;
 //
 //        String query = "SELECT * FROM " +
@@ -480,9 +479,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 //                double balance = cursor.getDouble(cursor.getColumnIndex(SELL_LOAD_COLUMN_BALANCE));
 //                String description = (cursor.isNull(cursor.getColumnIndex(SELL_LOAD_COLUMN_DESCRIPTION))) ? "" : cursor.getString(cursor.getColumnIndex(SELL_LOAD_COLUMN_DESCRIPTION));
 //                boolean isPaid = cursor.getInt(cursor.getColumnIndex(SELL_LOAD_COLUMN_STATUS)) != 0;
-//                boolean isValidated = cursor.getInt(cursor.getColumnIndex(SELL_LOAD_COLUMN_VALIDATED)) != 0;
 //
-//                SoldLoadInfo soldLoadInfo = new SoldLoadInfo(id, product, number, dateTime, balance, description, isPaid, isValidated);
+//                SoldLoadInfo soldLoadInfo = new SoldLoadInfo(id, product, number, dateTime, balance, description, isPaid);
 //                listViewAdapter.add(soldLoadInfo);
 //            } while (cursor.moveToNext());
 //        }
@@ -494,40 +492,28 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 //
 //        return bRet;
 //    }
-    public long getSellLoadID(String number, String product, double balance) {
-        String selectQuery = "SELECT " +
-                SELL_LOAD_COLUMN_ID + " FROM " +
-                TABLE_SELL_LOAD + " WHERE " +
-                SELL_LOAD_COLUMN_NUMBER + "='" + number + "' AND " +
-                SELL_LOAD_COLUMN_PRODUCT + "='" + product + "' AND " +
-                SELL_LOAD_COLUMN_BALANCE + "=" + balance + " ORDER BY " +
-                SELL_LOAD_COLUMN_ID + " DESC LIMIT 1";
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(selectQuery, null);
-        long id = -1;
-
-        if(cursor.moveToFirst()) {
-            cursor.moveToFirst();
-            id = cursor.getLong(cursor.getColumnIndex(SELL_LOAD_COLUMN_ID));
-        }
-
-        cursor.close();
-        db.close();
-
-        return id;
-    }
-    public boolean setValidSellLoad(int id) {
-        boolean bRet;
-        ContentValues values = new ContentValues();
-        values.put(SELL_LOAD_COLUMN_VALIDATED, true);
-        SQLiteDatabase db = this.getWritableDatabase();
-
-        bRet = db.update(TABLE_SELL_LOAD, values, SELL_LOAD_COLUMN_ID + "=" + id, null) > 0;
-
-        db.close();
-
-        return bRet;
-    }
+//    public long getSellLoadID(String number, String product, double balance) {
+//        String selectQuery = "SELECT " +
+//                SELL_LOAD_COLUMN_ID + " FROM " +
+//                TABLE_SELL_LOAD + " WHERE " +
+//                SELL_LOAD_COLUMN_NUMBER + "='" + number + "' AND " +
+//                SELL_LOAD_COLUMN_PRODUCT + "='" + product + "' AND " +
+//                SELL_LOAD_COLUMN_BALANCE + "=" + balance + " ORDER BY " +
+//                SELL_LOAD_COLUMN_ID + " DESC LIMIT 1";
+//        SQLiteDatabase db = this.getReadableDatabase();
+//        Cursor cursor = db.rawQuery(selectQuery, null);
+//        long id = -1;
+//
+//        if(cursor.moveToFirst()) {
+//            cursor.moveToFirst();
+//            id = cursor.getLong(cursor.getColumnIndex(SELL_LOAD_COLUMN_ID));
+//        }
+//
+//        cursor.close();
+//        db.close();
+//
+//        return id;
+//    }
 
     private long addBalance(SQLiteDatabase db, long rowId, double balance, String tableName) {
         ContentValues values = new ContentValues();
@@ -604,52 +590,109 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 //
 //        return previousLatestBalance;
 //    }
-    // TODO - to be confirmed
-    public ArrayList<HistoryRecordInfo> getHistoryRecordList() {
-        ArrayList<HistoryRecordInfo> historyRecordInfos = new ArrayList<>();
+
+    // TODO - add for info from product_code table...
+    public ArrayList<TransactionRecordInfo> getTransactionRecordList() {
+        ArrayList<TransactionRecordInfo> transactionRecordInfos = new ArrayList<>();
         final String TABLE_ID = "table_id";
         final String DATETIME_DEPOSITED = "datetime_deposited";
-        String selectQuery = "SELECT " + MyUtility.concatTwoStringWithDelimiter(TABLE_BALANCE, ".", BALANCE_COLUMN_ROW_ID) + " AS " + TABLE_ID + ", " +
-                MyUtility.concatTwoStringWithDelimiter(TABLE_BALANCE, ".", BALANCE_COLUMN_ID) + ", " +
-                MyUtility.concatTwoStringWithDelimiter(TABLE_BALANCE, ".", BALANCE_COLUMN_BALANCE) + ", " +
-                MyUtility.concatTwoStringWithDelimiter(TABLE_BALANCE, ".", BALANCE_COLUMN_TABLE_NAME) + ", " +
-                MyUtility.concatTwoStringWithDelimiter(TABLE_SELL_LOAD, ".", SELL_LOAD_COLUMN_PRODUCT) + ", " +
-                MyUtility.concatTwoStringWithDelimiter(TABLE_SELL_LOAD, ".", SELL_LOAD_COLUMN_NUMBER) + ", " +
-                MyUtility.concatTwoStringWithDelimiter(TABLE_SELL_LOAD, ".", SELL_LOAD_COLUMN_DATETIME_SOLD) + ", " +
-                MyUtility.concatTwoStringWithDelimiter(TABLE_SELL_LOAD, ".", SELL_LOAD_COLUMN_DESCRIPTION) + ", " +
-                MyUtility.concatTwoStringWithDelimiter(TABLE_SELL_LOAD, ".", SELL_LOAD_COLUMN_STATUS) + ", " +
-                MyUtility.concatTwoStringWithDelimiter(TABLE_SELL_LOAD, ".", SELL_LOAD_COLUMN_VALIDATED) + ", " +
-                MyUtility.concatTwoStringWithDelimiter(TABLE_DEPOSIT, ".", DEPOSIT_COLUMN_AMOUNT) + ", " +
-                MyUtility.concatTwoStringWithDelimiter(TABLE_DEPOSIT, ".", DEPOSIT_COLUMN_DATETIME) + " AS " + DATETIME_DEPOSITED + " " +
+        final String PRODUCT_DESCRIPTION = "product_description";
+        final String COMPARED_DATETIME = "compared_datetime";
+        final String PHONEBOOK_NAME = "phonebook_name";
+        final String SELL_LOAD_AMOUNT = "sell_load_amount";
+        final String DEPOSIT_AMOUNT = "deposit_amount";
+
+        String selectQuery = "SELECT " + TABLE_BALANCE + "." + BALANCE_COLUMN_ROW_ID + " AS " + TABLE_ID + ", " +
+                // balance
+                TABLE_BALANCE + "." + BALANCE_COLUMN_ID + ", " +
+                TABLE_BALANCE + "." + BALANCE_COLUMN_BALANCE + ", " +
+                TABLE_BALANCE + "." + BALANCE_COLUMN_TABLE_NAME + ", " +
+                // product_category
+                TABLE_PRODUCT_CATEGORY + "." + PRODUCT_CATEGORY_COLUMN_CATEGORY + ", " +
+                // product_name
+                TABLE_PRODUCT_NAME + "." + PRODUCT_NAME_COLUMN_NAME + ", " +
+                // product_code
+                TABLE_PRODUCT_CODE + "." + PRODUCT_CODE_COLUMN_CODE + ", " +
+                TABLE_PRODUCT_CODE + "." + PRODUCT_CODE_COLUMN_DESCRIPTION + " AS " + PRODUCT_DESCRIPTION + ", " +
+                TABLE_PRODUCT_CODE + "." + PRODUCT_CODE_COLUMN_DISCOUNT + ", " +
+                // sell_load
+                TABLE_SELL_LOAD + "." + SELL_LOAD_COLUMN_PRODUCT + ", " +    // TODO - to be removed later... or not (e.g. GMXAMAX20 => GMXAMAX<AMOUNT>)
+                TABLE_SELL_LOAD + "." + SELL_LOAD_COLUMN_AMOUNT + " AS " + SELL_LOAD_AMOUNT + ", " +
+                TABLE_SELL_LOAD + "." + SELL_LOAD_COLUMN_NUMBER + ", " +
+                TABLE_SELL_LOAD + "." + SELL_LOAD_COLUMN_DATETIME_SOLD + ", " +
+                TABLE_SELL_LOAD + "." + SELL_LOAD_COLUMN_DESCRIPTION + ", " +
+                TABLE_SELL_LOAD + "." + SELL_LOAD_COLUMN_STATUS + ", " +
+                TABLE_SELL_LOAD + "." + SELL_LOAD_COLUMN_DATETIME_PAID + ", " +
+                // deposit
+                TABLE_DEPOSIT + "." + DEPOSIT_COLUMN_AMOUNT + " AS " + DEPOSIT_AMOUNT + ", " +
+                TABLE_DEPOSIT + "." + DEPOSIT_COLUMN_DATETIME + " AS " + DATETIME_DEPOSITED + ", " +
+                // phonebook
+                TABLE_PHONEBOOK + "." + PHONEBOOK_COLUMN_NAME + " AS " + PHONEBOOK_NAME + ", " +
+                // date compared to sort records...
+                "CASE WHEN " +
+                    TABLE_SELL_LOAD + "." + SELL_LOAD_COLUMN_DATETIME_SOLD + " IS NOT NULL" +
+                " THEN " + TABLE_SELL_LOAD + "." + SELL_LOAD_COLUMN_DATETIME_SOLD +
+                " ELSE " + TABLE_DEPOSIT + "." + DEPOSIT_COLUMN_DATETIME +
+                " END AS " + COMPARED_DATETIME + " " +
+
                 "FROM " + TABLE_BALANCE + " " +
-                "LEFT JOIN " + TABLE_SELL_LOAD + " ON " + TABLE_ID + "=" + MyUtility.concatTwoStringWithDelimiter(TABLE_SELL_LOAD, ".", SELL_LOAD_COLUMN_ID) + " AND " + MyUtility.concatTwoStringWithDelimiter(TABLE_BALANCE, ".", BALANCE_COLUMN_TABLE_NAME) + "='" + TABLE_SELL_LOAD + "' " +
-                "LEFT JOIN " + TABLE_DEPOSIT + " ON " + TABLE_ID + "=" + MyUtility.concatTwoStringWithDelimiter(TABLE_DEPOSIT, ".", DEPOSIT_COLUMN_ID) + " AND " + MyUtility.concatTwoStringWithDelimiter(TABLE_BALANCE, ".", BALANCE_COLUMN_TABLE_NAME) + "='" + TABLE_DEPOSIT + "' " +
-                "ORDER BY " + MyUtility.concatTwoStringWithDelimiter(TABLE_BALANCE, ".", BALANCE_COLUMN_ID) + " DESC";
+                "LEFT JOIN " + TABLE_SELL_LOAD + " ON " + TABLE_ID + "=" + TABLE_SELL_LOAD + "." + SELL_LOAD_COLUMN_ID +
+                    " AND " + TABLE_BALANCE + "." + BALANCE_COLUMN_TABLE_NAME + "='" + TABLE_SELL_LOAD + "' " +
+                "LEFT JOIN " + TABLE_DEPOSIT + " ON " + TABLE_ID + "=" + TABLE_DEPOSIT + "." + DEPOSIT_COLUMN_ID +
+                    " AND " + TABLE_BALANCE + "." + BALANCE_COLUMN_TABLE_NAME + "='" + TABLE_DEPOSIT + "' " +
+                "LEFT JOIN " + TABLE_PRODUCT_CODE + " ON " + TABLE_SELL_LOAD + "." + SELL_LOAD_COLUMN_PRODUCT_CODE_ID + "=" + TABLE_PRODUCT_CODE + "." + PRODUCT_CODE_COLUMN_ID +
+                    " AND " + TABLE_BALANCE + "." + BALANCE_COLUMN_TABLE_NAME + "='" + TABLE_SELL_LOAD + "' " +
+                "LEFT JOIN " + TABLE_PRODUCT_NAME + " ON " + TABLE_PRODUCT_CODE + "." + PRODUCT_CODE_COLUMN_PRODUCT_NAME_ID + "=" + TABLE_PRODUCT_NAME + "." + PRODUCT_NAME_COLUMN_ID +
+                    " AND " + TABLE_BALANCE + "." + BALANCE_COLUMN_TABLE_NAME + "='" + TABLE_SELL_LOAD + "' " +
+                "LEFT JOIN " + TABLE_PRODUCT_CATEGORY + " ON " + TABLE_PRODUCT_NAME + "." + PRODUCT_NAME_COLUMN_PRODUCT_CATEGORY_ID + "=" + TABLE_PRODUCT_CATEGORY + "." + PRODUCT_CATEGORY_COLUMN_ID +
+                    " AND " + TABLE_BALANCE + "." + BALANCE_COLUMN_TABLE_NAME + "='" + TABLE_SELL_LOAD + "' " +
+                "LEFT JOIN " + TABLE_PHONEBOOK + " ON " + TABLE_SELL_LOAD + "." + SELL_LOAD_COLUMN_NUMBER + "=" + TABLE_PHONEBOOK + "." + PHONEBOOK_COLUMN_NUMBER +
+                    " AND " + TABLE_BALANCE + "." + BALANCE_COLUMN_TABLE_NAME + "='" + TABLE_SELL_LOAD + "' " +
+                "ORDER BY " + COMPARED_DATETIME + " ASC, " +
+                    TABLE_BALANCE + "." + BALANCE_COLUMN_ID + " ASC";
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(selectQuery, null);
 
         if(cursor.moveToFirst()) {
             do {
-                int id = cursor.getInt(cursor.getColumnIndex(BALANCE_COLUMN_ID));
-                int tableId = cursor.getInt(cursor.getColumnIndex(TABLE_ID));
+                int id = cursor.getInt(cursor.getColumnIndex(BALANCE_COLUMN_ID));   // id of balance table
+                int tableId = cursor.getInt(cursor.getColumnIndex(TABLE_ID));   // id either in sell_load or deposit table
                 String tableName = cursor.getString(cursor.getColumnIndex(BALANCE_COLUMN_TABLE_NAME));
                 double balance = cursor.getDouble(cursor.getColumnIndex(BALANCE_COLUMN_BALANCE));
 
                 if(tableName.equals(TABLE_SELL_LOAD)) {
                     String product = cursor.getString(cursor.getColumnIndex(SELL_LOAD_COLUMN_PRODUCT));
+                    double amount = cursor.getDouble(cursor.getColumnIndex(SELL_LOAD_AMOUNT));
                     String number = cursor.getString(cursor.getColumnIndex(SELL_LOAD_COLUMN_NUMBER));
                     String dateTime = cursor.getString(cursor.getColumnIndex(SELL_LOAD_COLUMN_DATETIME_SOLD));
                     String description = (cursor.isNull(cursor.getColumnIndex(SELL_LOAD_COLUMN_DESCRIPTION))) ? "" : cursor.getString(cursor.getColumnIndex(SELL_LOAD_COLUMN_DESCRIPTION));
                     boolean isPaid = cursor.getInt(cursor.getColumnIndex(SELL_LOAD_COLUMN_STATUS)) != 0;
-                    boolean isValidated = cursor.getInt(cursor.getColumnIndex(SELL_LOAD_COLUMN_VALIDATED)) != 0;
 
-                    historyRecordInfos.add(new HistoryRecordInfo(id, tableName, balance, new SoldLoadInfo(tableId, product, number, dateTime, balance, description, isPaid, isValidated)));
+                    String productCode = cursor.getString(cursor.getColumnIndex(PRODUCT_CODE_COLUMN_CODE));
+                    double productDiscount = cursor.getDouble(cursor.getColumnIndex(PRODUCT_CODE_COLUMN_DISCOUNT));
+                    String productDescription = cursor.getString(cursor.getColumnIndex(PRODUCT_DESCRIPTION));
+                    String productName = cursor.getString(cursor.getColumnIndex(PRODUCT_NAME_COLUMN_NAME));
+                    String productCategoryName = cursor.getString(cursor.getColumnIndex(PRODUCT_CATEGORY_COLUMN_CATEGORY));
+
+                    String phonebookName = (cursor.isNull(cursor.getColumnIndex(PHONEBOOK_NAME))) ? null : cursor.getString(cursor.getColumnIndex(PHONEBOOK_NAME));
+
+                    transactionRecordInfos.add(
+                            new TransactionRecordInfo(id, tableName, balance,
+                                new SoldLoadInfo(tableId, product, amount, number, phonebookName, dateTime, balance, description, isPaid,
+                                    new ProductInfo(new ProductCodeInfo(productCode, productDescription, productDiscount), productName, productCategoryName)
+                                )
+                            )
+                        );
                 }
                 else if(tableName.equals(TABLE_DEPOSIT)) {
-                    double amount = cursor.getDouble(cursor.getColumnIndex(DEPOSIT_COLUMN_AMOUNT));
+                    double amount = cursor.getDouble(cursor.getColumnIndex(DEPOSIT_AMOUNT));
                     String dateTime = cursor.getString(cursor.getColumnIndex(DATETIME_DEPOSITED));
 
-                    historyRecordInfos.add(new HistoryRecordInfo(id, tableName, balance, new DepositInfo(tableId, amount, dateTime)));
+                    transactionRecordInfos.add(
+                            new TransactionRecordInfo(id, tableName, balance,
+                                new DepositInfo(tableId, amount, dateTime)
+                            )
+                    );
                 }
             } while (cursor.moveToNext());
         }
@@ -657,7 +700,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         cursor.close();
         db.close();
 
-        return historyRecordInfos;
+        return transactionRecordInfos;
     }
 
     public long addPhonebook(String name, String number) {
@@ -695,6 +738,23 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         db.close();
 
         return bRet;
+    }
+    public boolean isNumberExists(String number) {
+        String query = "SELECT * FROM " +
+                TABLE_PHONEBOOK + " WHERE " +
+                PHONEBOOK_COLUMN_NUMBER + " = " + number + " LIMIT 1";
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(query, null);
+        boolean isExists = false;
+
+        if(cursor.moveToFirst()) {
+            isExists = true;
+        }
+
+        cursor.close();
+        db.close();
+
+        return isExists;
     }
     public ArrayList<PhonebookInfo> getPhonebookList() {
         ArrayList<PhonebookInfo> arrayOfPhonebookInfo = new ArrayList<>();

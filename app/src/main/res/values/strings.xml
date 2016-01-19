@@ -29,6 +29,7 @@
     <string name="menu_paid">Paid</string>
     <string name="menu_edit">Edit</string>
     <string name="menu_delete">Delete</string>
+    <string name="menu_details">Details</string>
 
     <!-- product category -->
     <string-array name="product_category">
@@ -51,6 +52,25 @@
         <item>GLOBE,09178662418</item>
         <item>SUN,09228504340</item>
         <item>SUN,09224512799</item>
+    </string-array>
+
+    <!-- date ranges -->
+    <string-array name="date_ranges">
+        <item>This Month</item>
+        <item>Last Week</item>
+        <item>Last Month</item>
+        <item>Last 3 Months</item>
+        <item>Last 6 Months</item>
+        <item>Last Year</item>
+        <item>Custom Range</item>
+        <item>All</item>
+    </string-array>
+    
+    <!-- paid status -->
+    <string-array name="paid_status">
+        <item>All</item>
+        <item>Paid</item>
+        <item>Unpaid</item>
     </string-array>
 
     <!-- phonebook settings sort by entries -->

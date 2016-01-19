@@ -1,7 +1,11 @@
 package com.example.stevenpila.loadcentraldiary;
 
+import android.app.DatePickerDialog;
+import android.app.Dialog;
+import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -12,7 +16,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.DatePicker;
 import android.widget.TextView;
+
+import java.util.Calendar;
 
 public class DepositActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -25,6 +32,9 @@ public class DepositActivity extends AppCompatActivity
     private double m_currentBalance;
 
     private DatabaseHandler m_dbHandler;
+
+
+    private static int DATEPICKER_DIALOG_ID = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +75,7 @@ public class DepositActivity extends AppCompatActivity
         setCurrentBalance();    // initialize current balance
 
         MyUtility.setTextViewValue(balanceView, m_currentBalance); // initializes the current balance upon application start
+        dateTxt.setInputType(InputType.TYPE_NULL);
         dateTxt.setText(MyUtility.getCurrentDate());    // set default value to current date (format: yyyy-mm-dd)
         amountTxt.setOnFocusChangeListener(new View.OnFocusChangeListener() {   // if value is empty, set to default value of 0
             @Override
@@ -82,6 +93,13 @@ public class DepositActivity extends AppCompatActivity
                         amountTxt.setText("");
                     }
                 }
+            }
+        });
+        dateTxt.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                showDatePickerDialog();
             }
         });
     }
@@ -146,6 +164,13 @@ public class DepositActivity extends AppCompatActivity
     }
 
     // jeff
+    public void showDatePickerDialog() {
+        MyDatePickerDialog myDatePickerDialog = new MyDatePickerDialog();
+        myDatePickerDialog.setEditText(dateTxt);
+        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+        myDatePickerDialog.show(fragmentTransaction, "DatePicker");
+    }
+
     public void submitButtonOnClick(View view) {
         if(!ValidateRequiredFields())
             return;

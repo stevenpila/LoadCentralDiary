@@ -15,13 +15,13 @@ import android.widget.Filter;
 /**
  * Created by Steven Pila on 11/20/2015.
  */
-public class AutocompleteProductCodeAdapter extends ArrayAdapter<ProductLoadInfo> {
+public class AutocompleteProductCodeAdapter extends ArrayAdapter<ProductCodeInfo> {
     private final Context m_context;
     private final int m_view_resource_id;
-    private final ArrayList<ProductLoadInfo> m_full_product_code_list;
-    private ArrayList<ProductLoadInfo> m_current_product_code_list;
+    private final ArrayList<ProductCodeInfo> m_full_product_code_list;
+    private ArrayList<ProductCodeInfo> m_current_product_code_list;
 
-    public AutocompleteProductCodeAdapter(Context context, int viewResourceId, ArrayList<ProductLoadInfo> product_code_list) {
+    public AutocompleteProductCodeAdapter(Context context, int viewResourceId, ArrayList<ProductCodeInfo> product_code_list) {
         super(context, viewResourceId, product_code_list);
 
         m_context = context;
@@ -37,14 +37,14 @@ public class AutocompleteProductCodeAdapter extends ArrayAdapter<ProductLoadInfo
                 convertView = layoutInflater.inflate(m_view_resource_id, parent, false);
             }
 
-            ProductLoadInfo productLoadInfo = m_current_product_code_list.get(position);
+            ProductCodeInfo productCodeInfo = m_current_product_code_list.get(position);
             TextView textViewCodeItem = (TextView) convertView.findViewById(R.id.autocompleteTextViewCode);
             TextView textViewDescItem = (TextView) convertView.findViewById(R.id.autocompleteTextViewDesc);
 
-            textViewCodeItem.setText(Html.fromHtml(productLoadInfo.m_product_view));
-            textViewDescItem.setText(productLoadInfo.m_product_description);
+            textViewCodeItem.setText(Html.fromHtml(productCodeInfo.mProductView));
+            textViewDescItem.setText(productCodeInfo.mProductDescription);
         } catch (NullPointerException e) {
-            MyUtility.logMessage(m_context, e.getMessage());
+            MyUtility.logMessage(e.getMessage());
         }
 
         return convertView;
@@ -56,7 +56,7 @@ public class AutocompleteProductCodeAdapter extends ArrayAdapter<ProductLoadInfo
     }
 
     @Override
-    public ProductLoadInfo getItem(int position) {
+    public ProductCodeInfo getItem(int position) {
         return m_current_product_code_list.get(position);
     }
 
@@ -67,7 +67,7 @@ public class AutocompleteProductCodeAdapter extends ArrayAdapter<ProductLoadInfo
             protected FilterResults performFiltering(CharSequence constraint) {
                 FilterResults filterResults = new FilterResults();
                 if(constraint != null) {
-                    ArrayList<ProductLoadInfo> results = getResults(constraint.toString().toLowerCase()); // get a list of results based from constraint...
+                    ArrayList<ProductCodeInfo> results = getResults(constraint.toString().toLowerCase()); // get a list of results based from constraint...
                     filterResults.count = results.size();
                     filterResults.values = results;
                 }
@@ -78,7 +78,7 @@ public class AutocompleteProductCodeAdapter extends ArrayAdapter<ProductLoadInfo
             @Override
             protected void publishResults(CharSequence constraint, FilterResults results) {
                 if(results != null && results.count > 0) {
-                    m_current_product_code_list = (ArrayList<ProductLoadInfo>) results.values;
+                    m_current_product_code_list = (ArrayList<ProductCodeInfo>) results.values;
                     notifyDataSetChanged();
                 }
                 else
@@ -87,25 +87,25 @@ public class AutocompleteProductCodeAdapter extends ArrayAdapter<ProductLoadInfo
         };
     }
 
-    private ArrayList<ProductLoadInfo> getResults(String constraint) {
-        ArrayList<ProductLoadInfo> results = new ArrayList<>();
+    private ArrayList<ProductCodeInfo> getResults(String constraint) {
+        ArrayList<ProductCodeInfo> results = new ArrayList<>();
 
-        for(ProductLoadInfo item : m_full_product_code_list) {
-            if(item.m_product.toLowerCase().contains(constraint)) {
-                String product = item.m_product.toLowerCase();
+        for(ProductCodeInfo item : m_full_product_code_list) {
+            if(item.mProduct.toLowerCase().contains(constraint)) {
+                String product = item.mProduct.toLowerCase();
                 if(product.contains("<amount>")) {
                     product = product.replace("<amount>", "[amount]");
                 }
-                ProductLoadInfo productLoadInfo = new ProductLoadInfo(item.m_product, item.m_product_description, item.m_discount);
+                ProductCodeInfo productCodeInfo = new ProductCodeInfo(item.mProduct, item.mProductDescription, item.mDiscount);
                 if(product.contains(constraint)) {
                     String startPart = product.substring(0, product.indexOf(constraint)).trim();
                     String endPart = product.substring(product.indexOf(constraint) + constraint.length()).trim();
                     String newStr = startPart + "<font color=\"#333333\"><b>" + constraint + "</b></font>" + endPart;
 
-                    productLoadInfo.m_product_view = newStr.toUpperCase();
+                    productCodeInfo.mProductView = newStr.toUpperCase();
                 }
 
-                results.add(productLoadInfo);
+                results.add(productCodeInfo);
             }
         }
 

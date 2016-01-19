@@ -1,8 +1,11 @@
 package com.example.stevenpila.loadcentraldiary;
 
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -16,23 +19,22 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.DatePicker;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 
 public class HomeActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener{
 
-    private ListView m_listView;
-//    private NavigationView m_navigationView;
-
-    private double m_currentBalance;
-
-    private DatabaseHandler m_dbHandler;
-
-    private static HomeActivity m_homeActivityInstance = null;
+    private ListView mTransactionRecordListView;
+    private DatabaseHandler mDBHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,15 +42,6 @@ public class HomeActivity extends AppCompatActivity
         setContentView(R.layout.activity_home);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-//        fab.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
-//            }
-//        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -59,41 +52,24 @@ public class HomeActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        m_dbHandler = new DatabaseHandler(this);    // initialize database first
-
-        m_listView = (ListView) findViewById(R.id.listView);
-
-        View navHeaderView = LayoutInflater.from(this).inflate(R.layout.nav_header_home, null);
+        View navHeaderView = LayoutInflater.from(this).inflate(R.layout.nav_header_home, null); // add header view
         navigationView.addHeaderView(navHeaderView);
 
-        TextView balanceView = (TextView) navHeaderView.findViewById(R.id.balance);
+        mDBHandler = new DatabaseHandler(this); // initialize database first
 
-        setCurrentBalance();    // initialize current balance
-        MyUtility.setTextViewValue(balanceView, m_currentBalance); // initializes the current balance upon application start
+        setCurrentBalance(navHeaderView);       // initialize current balance
+        setTransactionRecordListView();         // initialize list view
+        setDateRangeSpinner();                  // initialize date range spinner
+        setPaidStatusSpinner();                 // initialize paid status spinner
+        setSearchEditText();                    // initialize search text
 
-        setListView();  // initialize list view
-        m_listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                HistoryRecordInfo historyRecordInfo = (HistoryRecordInfo) parent.getItemAtPosition(position);
-
-                if(historyRecordInfo.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD) && !historyRecordInfo.mSoldLoadInfo.m_description.isEmpty()) {
-                    alertDialog(historyRecordInfo.mSoldLoadInfo.m_description);
-                }
-            }
-        });
-
-        // for testing...
+        // for testing & debugging...
 //        TextView testView = (TextView) findViewById(R.id.textView);
 //        PDFFileParser pdfFileParser = new PDFFileParser();
 //        if(!pdfFileParser.loadProductLoadList(this))
 //            testView.setText(pdfFileParser.getErrorMessage());
 //        else
 //            testView.setText(pdfFileParser.m_response);
-
-//        IntentFilter intentFilter = new IntentFilter(MySMSListener.SMS_LISTENER_ACTION);
-//        registerReceiver(new MySMSListener(), intentFilter);
-        m_homeActivityInstance = this;
     }
 
     @Override
@@ -156,42 +132,23 @@ public class HomeActivity extends AppCompatActivity
     }
 
     // jeff
-    private void setCurrentBalance() {
-        double currentBalance = m_dbHandler.getLatestBalance();
-
-        if(currentBalance < 0) {
-            m_currentBalance = 0.0;
-            MyUtility.showToast(this, "Failed to get current balance.", MyUtility.ToastLength.LONG);
-        }
-        else {
-            m_currentBalance = currentBalance;
-        }
-    }
-
-    private void setListView() {
-        ArrayList<HistoryRecordInfo> arrayOfHistoryRecordInfos = m_dbHandler.getHistoryRecordList();
-        ListViewAdapter listViewAdapter = new ListViewAdapter(this, arrayOfHistoryRecordInfos);
-        m_listView.setAdapter(listViewAdapter);
-        registerForContextMenu(m_listView); // triggered by long-pressed click
-    }
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View view, ContextMenu.ContextMenuInfo menuInfo) {
-        if(view.getId() == R.id.listView) {
+        if(view.getId() == R.id.contentHomeTransactionRecordLV) {
             MenuInflater menuInflater = getMenuInflater();
             menuInflater.inflate(R.menu.list_view_item_menu_home, menu);
             AdapterView.AdapterContextMenuInfo adapterContextMenuInfo = (AdapterView.AdapterContextMenuInfo) menuInfo;
             int position = adapterContextMenuInfo.position;
-            HistoryRecordInfo historyRecordInfo = (HistoryRecordInfo) m_listView.getItemAtPosition(position);
+            TransactionRecordInfo transactionRecordInfo = (TransactionRecordInfo) mTransactionRecordListView.getItemAtPosition(position);
 
-            if(historyRecordInfo.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD)) {
-                boolean isPaid = ((HistoryRecordInfo) m_listView.getItemAtPosition(position)).mSoldLoadInfo.m_isPaid;
+            if(transactionRecordInfo.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD)) {
+                boolean isPaid = ((TransactionRecordInfo) mTransactionRecordListView.getItemAtPosition(position)).mSoldLoadInfo.mIsPaid;
 
-                if(isPaid) {    // hide Paid button if sold load is already paid
+                if(isPaid)  // hide Paid button if sell load record is already paid
                     menu.findItem(R.id.paidItem).setVisible(false);
-                }
             }
-            else if(historyRecordInfo.mTableName.equals(DatabaseHandler.TABLE_DEPOSIT))
+            else if(transactionRecordInfo.mTableName.equals(DatabaseHandler.TABLE_DEPOSIT)) // hide Paid button if deposit record
                 menu.findItem(R.id.paidItem).setVisible(false);
         }
     }
@@ -200,61 +157,170 @@ public class HomeActivity extends AppCompatActivity
     public boolean onContextItemSelected(MenuItem item) {
         AdapterView.AdapterContextMenuInfo adapterContextMenuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
         int position = adapterContextMenuInfo.position;
-        HistoryRecordInfo historyRecordInfo = (HistoryRecordInfo) m_listView.getItemAtPosition(position);
+        TransactionRecordInfo transactionRecordInfo = (TransactionRecordInfo) mTransactionRecordListView.getItemAtPosition(position);
 
-        String messageStr;
         switch (item.getItemId()) {
             case R.id.paidItem:
-                if(m_dbHandler.setSellLoadPaid(historyRecordInfo.mSoldLoadInfo.m_id)) {
-//                    adapterContextMenuInfo.targetView.setBackgroundColor(getResources().getColor(R.color.colorDefault));
-                    ImageView paidImage = (ImageView) adapterContextMenuInfo.targetView.findViewById(R.id.homeListViewItemPaidImage);
+                if(mDBHandler.setSellLoadPaid(transactionRecordInfo.mSoldLoadInfo.mId)) {  // if successfully updated sell load record paid status to true
+                    ImageView paidImage = (ImageView) adapterContextMenuInfo.targetView.findViewById(R.id.listViewItemHomeSellLoadPaidIV);   // get paid ImageView
 
-                    ((HistoryRecordInfo) m_listView.getItemAtPosition(position)).mSoldLoadInfo.m_isPaid = true;
-                    paidImage.setBackgroundColor(getResources().getColor(R.color.colorGreen));
-                    messageStr = "Successfully set status to PAID.";
+                    ((TransactionRecordInfo) mTransactionRecordListView.getItemAtPosition(position)).mSoldLoadInfo.mIsPaid = true; // update sell load record paid status to true
+                    paidImage.setBackgroundColor(getResources().getColor(R.color.colorGreen));  // update background color of paid ImageView
+
+                    MyUtility.showToast(this, "Paid successfully.", MyUtility.ToastLength.LONG);
                 }
                 else
-                    messageStr = "Failed to set status to PAID.";
-
-                MyUtility.showToast(this, messageStr, MyUtility.ToastLength.LONG);
+                    MyUtility.logMessage("Failed to set status to paid.");
 
                 return true;
-            case R.id.editItem:
+            case R.id.editItem:     // TODO - do something here...
                 return true;
-            case R.id.deleteItem:
+            case R.id.deleteItem:   // TODO - do something here...
+                return true;
+            case R.id.detailsItem:
+                int actualAmount = MyUtility.getProductAndAmountFromString(transactionRecordInfo.mSoldLoadInfo.mProduct).m_second;
+                double discountedAmount = MyUtility.roundOff((actualAmount * transactionRecordInfo.mSoldLoadInfo.mProductInfo.mProductCodeInfo.mDiscount) / 100, 2);
+                String phonebookName = (transactionRecordInfo.mSoldLoadInfo.mNumberName != null) ? transactionRecordInfo.mSoldLoadInfo.mNumberName : "Unknown";
+
+                String details = "Number: " + transactionRecordInfo.mSoldLoadInfo.mNumber + " (" + phonebookName + ")\n" +
+                        "Product: " + transactionRecordInfo.mSoldLoadInfo.mProduct + "\n" +
+                        "Amount: " + MyUtility.PESO_SIGN + actualAmount + "\n" +
+                        "Discount: " + MyUtility.setDecimalPlaces(2, transactionRecordInfo.mSoldLoadInfo.mProductInfo.mProductCodeInfo.mDiscount) + "%\n" +
+                        "Discounted Amount: " + MyUtility.PESO_SIGN + MyUtility.setDecimalPlaces(2, actualAmount - discountedAmount) + "\n" +
+                        "Profit: " + MyUtility.PESO_SIGN + MyUtility.setDecimalPlaces(2, actualAmount - (actualAmount - discountedAmount));
+
+                alertDialog("Summary Details", details);
                 return true;
             default:
                 return super.onContextItemSelected(item);
         }
     }
 
-    private void alertDialog(String description) {
+    private void alertDialog(String title, String description) {
         new AlertDialog.Builder(this)
-                .setTitle("Description")
+                .setTitle(title)
                 .setMessage(description)
                 .setPositiveButton("OK", null)
                 .setIcon(android.R.drawable.ic_dialog_info)
                 .show();
     }
 
-    static public HomeActivity getInstance() {
-        return m_homeActivityInstance;
+    private void setCurrentBalance(View view) {
+        double currentBalance = mDBHandler.getLatestBalance();
+
+        if(currentBalance < 0) {
+            currentBalance = 0.0;
+
+            MyUtility.logMessage("Failed to get current balance.");
+        }
+
+        TextView balanceTV = (TextView) view.findViewById(R.id.balance);
+        MyUtility.setTextViewValue(balanceTV, currentBalance); // initializes TextView value with the current balance
     }
 
-    public void setValidSellLoad(int id) {
-        ListViewAdapter listViewAdapter = (ListViewAdapter) m_listView.getAdapter();
+    private void setTransactionRecordListView() {
+        mTransactionRecordListView = (ListView) findViewById(R.id.contentHomeTransactionRecordLV);
 
-        for(int i = 0; i < listViewAdapter.getCount(); ++i) {
-            HistoryRecordInfo historyRecordInfo = listViewAdapter.getItem(i);
+        ArrayList<TransactionRecordInfo> transactionRecordInfos = mDBHandler.getTransactionRecordList();
+        mTransactionRecordListView.setAdapter(new TransactionRecordListViewAdapter(this, transactionRecordInfos));
+        registerForContextMenu(mTransactionRecordListView); // triggered by long-pressed click
 
-            if(historyRecordInfo.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD)) {
-                if (historyRecordInfo.mSoldLoadInfo.m_id == id) {
-                    listViewAdapter.getItem(i).mSoldLoadInfo.m_isValidated = true;
-                    ((ListViewAdapter) m_listView.getAdapter()).notifyDataSetChanged();
+        mTransactionRecordListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                TransactionRecordInfo transactionRecordInfo = (TransactionRecordInfo) parent.getItemAtPosition(position);
 
-                    MyUtility.showNotification(this, "Sold Load Validated", "Product: " + historyRecordInfo.mSoldLoadInfo.m_product + "\nNumber: " + historyRecordInfo.mSoldLoadInfo.m_number + "\nBalance: " + historyRecordInfo.mSoldLoadInfo.m_balance);
+                if (transactionRecordInfo.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD) && !transactionRecordInfo.mSoldLoadInfo.mDescription.isEmpty()) {
+                    alertDialog("Description", transactionRecordInfo.mSoldLoadInfo.mDescription);
                 }
             }
-        }
+        });
+    }
+
+    private void setDateRangeSpinner() {
+        MyDateRangeSpinner dateRangeSpinner = (MyDateRangeSpinner) findViewById(R.id.contentHomeDateRangeSpinner);
+        String[] dateRanges = getResources().getStringArray(R.array.date_ranges);
+
+        dateRangeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                switch (position) {
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 7:
+                        ((TransactionRecordListViewAdapter) mTransactionRecordListView.getAdapter()).setArrayListByDateRange(position);
+                        break;
+                    case 6:
+                        showCustomRangeDatePickerDialog(position);
+                        break;
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+        dateRanges[0] += " (" + MyUtility.getMonth(MyUtility.getCalendar().get(Calendar.MONTH)) + ")";
+        ArrayAdapter dateRangeAdapter = new ArrayAdapter(this, R.layout.spinner_item_home_date_range, R.id.spinnerItemHomeDateRangeTV, dateRanges);
+        dateRangeSpinner.setAdapter(dateRangeAdapter);
+    }
+    private void showCustomRangeDatePickerDialog(final int position) {
+        final MyUtility.Pair<String, String> dateFromTo = new MyUtility.Pair<>(null, null);
+
+        new DatePickerDialog(HomeActivity.this, new DatePickerDialog.OnDateSetListener() {
+            @Override
+            public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+                dateFromTo.m_first = MyUtility.getCurrentDate(year, monthOfYear, dayOfMonth);
+                new DatePickerDialog(HomeActivity.this, new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+                        dateFromTo.m_second = MyUtility.getCurrentDate(year, monthOfYear, dayOfMonth);
+
+                        ((TransactionRecordListViewAdapter) mTransactionRecordListView.getAdapter()).setArrayListByDateRange(position, dateFromTo);
+                    }
+                }, MyUtility.getCalendar().get(Calendar.YEAR), MyUtility.getCalendar().get(Calendar.MONTH), MyUtility.getCalendar().get(Calendar.DAY_OF_MONTH)).show();
+            }
+        }, MyUtility.getCalendar().get(Calendar.YEAR), MyUtility.getCalendar().get(Calendar.MONTH), MyUtility.getCalendar().get(Calendar.DAY_OF_MONTH)).show();
+    }
+
+    private void setPaidStatusSpinner() {
+        Spinner paidStatusSpinner = (Spinner) findViewById(R.id.contentHomePaidStatusSPinner);
+        String[] paidStatus = getResources().getStringArray(R.array.paid_status);
+        paidStatusSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                ((TransactionRecordListViewAdapter) mTransactionRecordListView.getAdapter()).setArrayListByPaidStatus(position);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+        ArrayAdapter paidStatusAdapter = new ArrayAdapter(this, R.layout.spinner_item_home_date_range, R.id.spinnerItemHomeDateRangeTV, paidStatus);
+        paidStatusSpinner.setAdapter(paidStatusAdapter);
+    }
+
+    private void setSearchEditText() {
+        EditText searchET = (EditText) findViewById(R.id.contentHomeSearchET);
+        searchET.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                ((TransactionRecordListViewAdapter) mTransactionRecordListView.getAdapter()).getFilter().filter(s);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
     }
 }

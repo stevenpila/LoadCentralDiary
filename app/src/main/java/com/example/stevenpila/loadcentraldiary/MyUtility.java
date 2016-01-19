@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.DateFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -35,6 +36,9 @@ import java.util.regex.Pattern;
 public class MyUtility {
     static public final char PESO_SIGN = 0x20B1;
     static public final int TABLE_EMPTY = -5;
+    static public final String PACKAGE_NAME = "com.example.stevenpila.loadcentraldiary";
+    static public final String LOG_FILE_NAME = "loadcentraldiary.log";
+
     public enum DirectoryType {
         ROOT,
         FILES,
@@ -45,9 +49,14 @@ public class MyUtility {
         SHORT,
         LONG
     }
-    static public final String DOT = ".";
-    static public final String COMMA = ",";
+//    static public final String DOT = ".";
+//    static public final String COMMA = ",";
 
+    static public Calendar getCalendar() {
+        final Calendar cal = Calendar.getInstance();
+
+        return cal;
+    }
     static public String getCurrentDateTime() {
         Calendar c = Calendar.getInstance();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -61,6 +70,28 @@ public class MyUtility {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd"); // let's support date only for now
 
         return simpleDateFormat.format(c.getTime());
+    }
+    static public String getCurrentDate(int year, int month, int day) {
+        Calendar c = Calendar.getInstance();
+        c.set(year, month, day);
+//        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd"); // let's support date only for now
+
+        return simpleDateFormat.format(c.getTime());
+    }
+    static public Calendar getDateFromString(String date) {
+        Calendar c = Calendar.getInstance();
+//        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd"); // let's support date only for now
+        try {
+            c.setTime(simpleDateFormat.parse(date));// all done
+        } catch (ParseException e) {
+        }
+
+        return c;
+    }
+    static public String getMonth(int month) {
+        return new DateFormatSymbols().getMonths()[month];
     }
 
     static public Pair<String, Integer> getProductAndAmountFromString(String product) {
@@ -207,23 +238,31 @@ public class MyUtility {
         return productStr + " " + pinStr + " " + numberStr;
     }
 
-    static public void showToast(Context context, final String message, final ToastLength length) {
-        Toast.makeText(context, message, (length == ToastLength.SHORT) ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
-        final int indexOfCallerOfThisMethod = 3;
+    static public void showToast(Context context, final String logMessage, final ToastLength length) {
+        Toast.makeText(context, logMessage, (length == ToastLength.SHORT) ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
 
+        final int indexOfCallerOfThisMethod = 3;
         final String className = Thread.currentThread().getStackTrace()[indexOfCallerOfThisMethod].getClassName();
-        final int packageNameLen = context.getPackageName().length() + 1; // + 1 for .
+        final int packageNameLen = PACKAGE_NAME.length() + 1; // + 1 for .
+        final String newClassName = className.substring(packageNameLen);
+        final String newMethodName = Thread.currentThread().getStackTrace()[3].getMethodName();
+
+        String finalLogMessage = getCurrentDateTime() + " - " + newClassName + "::" + newMethodName + " - " + logMessage;
+
+        Log.v(LOG_FILE_NAME, finalLogMessage);
+    }
+
+    static public void logMessage(String logMessage) {
+        final int indexOfCallerOfThisMethod = 3;
+        final String className = Thread.currentThread().getStackTrace()[indexOfCallerOfThisMethod].getClassName();
+        final int packageNameLen = PACKAGE_NAME.length() + 1; // + 1 for .
 
         final String newClassName = className.substring(packageNameLen);
         final String newMethodName = Thread.currentThread().getStackTrace()[3].getMethodName();
 
-        String logMessage = getCurrentDateTime() + " - " + newClassName + "::" + newMethodName + " - " + message;
+        String finalLogMessage = getCurrentDateTime() + " - " + newClassName + "::" + newMethodName + " - " + logMessage;
 
-        Log.v(context.getPackageName() + ".log", logMessage);
-    }
-
-    static public void logMessage(Context context, String logMessage) {
-        Log.v(context.getPackageName() + ".log", logMessage);
+        Log.v(LOG_FILE_NAME, finalLogMessage);
     }
 
     static public void sendSMS(Context context, String number, String message) {
@@ -251,8 +290,6 @@ public class MyUtility {
                 switch (getResultCode()) {
                     case Activity.RESULT_OK:
                         MyUtility.showToast(_context, "Successfully sent message.", MyUtility.ToastLength.LONG);
-                        IntentFilter intentFilter = new IntentFilter(MySMSListener.SMS_LISTENER_ACTION);
-                        _context.registerReceiver(new MySMSListener(), intentFilter);
                         break;
                     case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
                         MyUtility.showToast(_context, "Failed to send message. Generic failure.", MyUtility.ToastLength.LONG);
@@ -314,9 +351,5 @@ public class MyUtility {
 
         NotificationManager notificationManager  = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(0, notification);
-    }
-
-    static public String concatTwoStringWithDelimiter(String leftStr, String delimiter, String rightStr) {
-        return leftStr + delimiter + rightStr;
     }
 }

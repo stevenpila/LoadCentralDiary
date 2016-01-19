@@ -12,7 +12,8 @@
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:paddingTop="20dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -33,16 +34,5 @@
             android:textSize="50dp"
             android:typeface="normal" />
     </LinearLayout>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="BALANCE"
-        android:id="@+id/balanceLabel"
-        android:textSize="40dp"
-        android:textIsSelectable="false"
-        android:typeface="monospace"
-        android:singleLine="false" />
 
 </LinearLayout>

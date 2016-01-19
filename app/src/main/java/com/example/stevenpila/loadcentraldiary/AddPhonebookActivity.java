@@ -33,7 +33,7 @@ public class AddPhonebookActivity extends AppCompatActivity {
         try {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         } catch (NullPointerException e) {
-            MyUtility.logMessage(this, e.getMessage());
+            MyUtility.logMessage(e.getMessage());
         }
 
         // jeff

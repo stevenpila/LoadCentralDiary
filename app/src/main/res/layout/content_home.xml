@@ -10,11 +10,76 @@
     tools:context=".HomeActivity"
     android:padding="5dp" >
 
-    <ListView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/listView"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true" />
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/linearLayout2">
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#646464">
+
+            <com.example.stevenpila.loadcentraldiary.MyDateRangeSpinner
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:id="@+id/contentHomeDateRangeSpinner"
+                android:layout_weight="1"
+                android:spinnerMode="dropdown" />
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:weightSum="1">
+
+                <Spinner
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/contentHomePaidStatusSPinner"
+                    android:spinnerMode="dropdown" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp">
+
+            <com.example.stevenpila.loadcentraldiary.MyEditText
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/contentHomeSearchET"
+                android:layout_above="@+id/linearLayout2"
+                android:layout_alignParentStart="true"
+                android:layout_toStartOf="@+id/imageView2"
+                android:inputType="text"
+                android:hint="Search here..." />
+
+            <ImageView
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:id="@+id/imageView2"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentEnd="true"
+                android:src="@android:drawable/ic_menu_search"
+                android:background="#3f3f3f" />
+        </RelativeLayout>
+
+        <ListView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stackFromBottom="true"
+            android:transcriptMode="alwaysScroll"
+            android:id="@+id/contentHomeTransactionRecordLV"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="true" />
+
+    </LinearLayout>
 
 </RelativeLayout>
