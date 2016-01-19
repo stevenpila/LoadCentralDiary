@@ -18,8 +18,8 @@ import java.util.Map;
 
 public class DatabaseHandler extends SQLiteOpenHelper {
 
-    private static final int DATABASE_VERSION = 1;
-    private static final String DATABASE_NAME = "load_central_diary.db";
+    public static final int DATABASE_VERSION = 1;
+    public static final String DATABASE_NAME = "load_central_diary.db";
 
     // product category
     private final String TABLE_PRODUCT_CATEGORY = "product_category";
@@ -676,13 +676,15 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
                     String phonebookName = (cursor.isNull(cursor.getColumnIndex(PHONEBOOK_NAME))) ? null : cursor.getString(cursor.getColumnIndex(PHONEBOOK_NAME));
 
+                    MyUtility.logMessage(productCode + " " + productDiscount);
+
                     transactionRecordInfos.add(
                             new TransactionRecordInfo(id, tableName, balance,
-                                new SoldLoadInfo(tableId, product, amount, number, phonebookName, dateTime, balance, description, isPaid,
-                                    new ProductInfo(new ProductCodeInfo(productCode, productDescription, productDiscount), productName, productCategoryName)
-                                )
+                                    new SoldLoadInfo(tableId, product, amount, number, phonebookName, dateTime, balance, description, isPaid,
+                                            new ProductInfo(new ProductCodeInfo(productCode, productDescription, productDiscount), productName, productCategoryName)
+                                    )
                             )
-                        );
+                    );
                 }
                 else if(tableName.equals(TABLE_DEPOSIT)) {
                     double amount = cursor.getDouble(cursor.getColumnIndex(DEPOSIT_AMOUNT));

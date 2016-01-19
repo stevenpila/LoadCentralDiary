@@ -1,6 +1,7 @@
 package com.example.stevenpila.loadcentraldiary;
 
 import android.content.Context;
+import android.graphics.Typeface;
 import android.provider.ContactsContract;
 import android.text.Html;
 import android.view.LayoutInflater;
@@ -41,28 +42,32 @@ public class TransactionRecordListViewAdapter extends ArrayAdapter<TransactionRe
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         TransactionRecordInfo transactionRecordInfo = mCurrentTransactionRecordInfos.get(position);
+        convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_view_item_home_sell_load, parent, false);
 
-        if(transactionRecordInfo.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD))
-            convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_view_item_home_sell_load, parent, false);
-        else if(transactionRecordInfo.mTableName.equals(DatabaseHandler.TABLE_DEPOSIT))
-            convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_view_item_home_deposit, parent, false);
+        if(stripeIndicator++ % 2 == 0)
+            convertView.setBackgroundColor(getContext().getResources().getColor(R.color.colorDefault));
+        else
+            convertView.setBackgroundColor(getContext().getResources().getColor(R.color.transparentColor));
+
+        if(stripeIndicator == getCount())
+            stripeIndicator = 0;
+
+        TextView productTV = (TextView) convertView.findViewById(R.id.listViewItemHomeSellLoadProductTV);
+        TextView numberTV = (TextView) convertView.findViewById(R.id.listViewItemHomeSellLoadNumberTV);
+        TextView dateTimeTV = (TextView) convertView.findViewById(R.id.listViewItemHomeSellLoadDatetimeTV);
+        TextView balanceTV = (TextView) convertView.findViewById(R.id.listViewItemHomeSellLoadBalanceTV);
+        TextView amountTV = (TextView) convertView.findViewById(R.id.listViewItemHomeSellLoadAmountTV);
+
+        ImageView paidIV = (ImageView) convertView.findViewById(R.id.listViewItemHomeSellLoadPaidIV);
+        ImageView infoIV = (ImageView) convertView.findViewById(R.id.listViewItemHomeSellLoadInfoIV);
 
         if(transactionRecordInfo.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD)) {
-            TextView productTV = (TextView) convertView.findViewById(R.id.listViewItemHomeSellLoadProductTV);
-            TextView numberTV = (TextView) convertView.findViewById(R.id.listViewItemHomeSellLoadNumberTV);
-            TextView dateTimeTV = (TextView) convertView.findViewById(R.id.listViewItemHomeSellLoadDatetimeTV);
-            TextView balanceTV = (TextView) convertView.findViewById(R.id.listViewItemHomeSellLoadBalanceTV);
-            TextView amountTV = (TextView) convertView.findViewById(R.id.listViewItemHomeSellLoadAmountTV);
-
             productTV.setText(transactionRecordInfo.mSoldLoadInfo.mProduct);   // set product code
             numberTV.setText(transactionRecordInfo.mSoldLoadInfo.mNumber);     // set number of client
             dateTimeTV.setText(MyUtility.getDate(transactionRecordInfo.mSoldLoadInfo.mDatetime));  // set datetime of transaction
-            balanceTV.setText(MyUtility.PESO_SIGN + MyUtility.setDecimalPlaces(2, MyUtility.roundOff(transactionRecordInfo.mSoldLoadInfo.mBalance, 2)));   // set current balance
-            amountTV.setText("-" + MyUtility.PESO_SIGN + MyUtility.setDecimalPlaces(2, transactionRecordInfo.mSoldLoadInfo.mAmount));
-            amountTV.setTextColor(getContext().getResources().getColor(android.R.color.holo_red_dark));
-
-            ImageView paidIV = (ImageView) convertView.findViewById(R.id.listViewItemHomeSellLoadPaidIV);
-            ImageView infoIV = (ImageView) convertView.findViewById(R.id.listViewItemHomeSellLoadInfoIV);
+            balanceTV.setText(MyUtility.PESO_SIGN + MyUtility.setDecimalPlaces(MyUtility.roundOff(transactionRecordInfo.mSoldLoadInfo.mBalance, 2)));   // set current balance
+            amountTV.setText("-" + MyUtility.PESO_SIGN + MyUtility.setDecimalPlaces(transactionRecordInfo.mSoldLoadInfo.mAmount));
+            amountTV.setTextColor(getContext().getResources().getColor(android.R.color.holo_red_dark)); // set text color
 
             if(transactionRecordInfo.mSoldLoadInfo.mIsPaid)    // if sell load record is already paid
                 paidIV.setBackgroundColor(getContext().getResources().getColor(R.color.colorGreen));
@@ -75,16 +80,15 @@ public class TransactionRecordListViewAdapter extends ArrayAdapter<TransactionRe
                 infoIV.setBackgroundColor(getContext().getResources().getColor(R.color.colorRed));
         }
         else if(transactionRecordInfo.mTableName.equals(DatabaseHandler.TABLE_DEPOSIT)) {
-            TextView amountAndDatetimeTV = (TextView) convertView.findViewById(R.id.listViewItemHomeDepositAmountDatetimeTV);
-            TextView balanceTV = (TextView) convertView.findViewById(R.id.listViewItemHomeDepositBalanceTV);
+            productTV.setText(HomeActivity.DEPOSIT);    // set product to DEPOSIT
+            numberTV.setHint("");   // remove hint since it will display Number
+            dateTimeTV.setText(MyUtility.getDate(transactionRecordInfo.mDepositInfo.mDatetime));  // set datetime of deposit
+            balanceTV.setText(MyUtility.PESO_SIGN + MyUtility.setDecimalPlaces(MyUtility.roundOff(transactionRecordInfo.mBalance, 2)));   // set current balance
+            amountTV.setText(MyUtility.PESO_SIGN + MyUtility.setDecimalPlaces(transactionRecordInfo.mDepositInfo.mAmount));  // set amount deposited
+            amountTV.setTextColor(getContext().getResources().getColor(android.R.color.holo_green_dark)); // set text color
 
-            amountAndDatetimeTV.setText(    // set deposited amount
-                    Html.fromHtml("Deposited <strong>" +
-                                    MyUtility.setDecimalPlaces(2, MyUtility.roundOff(transactionRecordInfo.mDepositInfo.mAmount, 2)) +
-                                    "</strong> on <strong>" + MyUtility.getDate(transactionRecordInfo.mDepositInfo.mDatetime) +
-                                    "</strong>")
-            );
-            balanceTV.setText(MyUtility.PESO_SIGN + MyUtility.setDecimalPlaces(2, MyUtility.roundOff(transactionRecordInfo.mBalance, 2)));  // set current balance
+            paidIV.setVisibility(View.INVISIBLE);   // hide image view since not necessary
+            infoIV.setVisibility(View.INVISIBLE);   // hide image view since not necessary
         }
 
         return convertView;
@@ -136,7 +140,7 @@ public class TransactionRecordListViewAdapter extends ArrayAdapter<TransactionRe
                     results.add(item);
                 }
             }
-            else if(item.mTableName.equals(DatabaseHandler.TABLE_DEPOSIT) && constraint.isEmpty())
+            else if(item.mTableName.equals(DatabaseHandler.TABLE_DEPOSIT) && (constraint.isEmpty() || constraint.equals(HomeActivity.DEPOSIT.toLowerCase())))
                     results.add(item);
         }
 
@@ -239,13 +243,13 @@ public class TransactionRecordListViewAdapter extends ArrayAdapter<TransactionRe
 
             if(isAddItem) {
                 switch (mCurrentShowPaidUnpaid) {
-                    case 0: results.add(item);
+                    case 0: results.add(item);  // All
                         break;
-                    case 1:
+                    case 1: // Paid
                         if(item.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD) && item.mSoldLoadInfo.mIsPaid)
                             results.add(item);
                         break;
-                    case 2:
+                    case 2: // Unpaid
                         if(item.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD) && !item.mSoldLoadInfo.mIsPaid)
                             results.add(item);
                         break;

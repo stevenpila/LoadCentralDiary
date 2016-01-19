@@ -12,7 +12,7 @@
 
         <RelativeLayout
             android:layout_width="343dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginRight="3dp"
             android:layout_weight="1"
             android:layout_gravity="bottom">
@@ -73,6 +73,7 @@
                 android:layout_alignParentStart="false"
                 android:layout_alignParentRight="true"
                 android:textAlignment="textEnd" />
+
         </RelativeLayout>
 
         <LinearLayout

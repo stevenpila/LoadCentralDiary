@@ -11,6 +11,7 @@
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:backupAgent=".MyBackup"
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
         <activity
@@ -65,6 +66,8 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.stevenpila.loadcentraldiary.PhonebookActivity" />
         </activity>
+
+        <meta-data android:name="com.google.android.backup.api_key" android:value="AEdPqrEAAAAISl09geBpR1GIpcwRihzc9zHgWYIdA58_w7bR0w" />
     </application>
 
 </manifest>

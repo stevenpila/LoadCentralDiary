@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DateFormatSymbols;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -328,6 +329,11 @@ public class MyUtility {
 
     static public String setDecimalPlaces(int decimalPlaces, double value) {
         return String.format("%." + decimalPlaces + "f", value);
+    }
+    static public String setDecimalPlaces(double value) {
+        DecimalFormat decimalFormat = new DecimalFormat("###,###,###.00");
+
+        return decimalFormat.format(value);
     }
 
     static public String getStringFromRegex(String string, String regex) {

@@ -36,6 +36,8 @@ public class HomeActivity extends AppCompatActivity
     private ListView mTransactionRecordListView;
     private DatabaseHandler mDBHandler;
 
+    static final String DEPOSIT = "DEPOSIT";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -245,18 +247,12 @@ public class HomeActivity extends AppCompatActivity
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 switch (position) {
-                    case 1:
-                    case 2:
-                    case 3:
-                    case 4:
-                    case 5:
-                    case 7:
-                        ((TransactionRecordListViewAdapter) mTransactionRecordListView.getAdapter()).setArrayListByDateRange(position);
-                        break;
                     case 6:
                         showCustomRangeDatePickerDialog(position);
-                        break;
+                        return;
                 }
+
+                ((TransactionRecordListViewAdapter) mTransactionRecordListView.getAdapter()).setArrayListByDateRange(position);
             }
 
             @Override

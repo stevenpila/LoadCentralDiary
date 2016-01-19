@@ -390,7 +390,12 @@ public class SellLoadActivity extends AppCompatActivity
                             }
                         }
                 )
-                .setNegativeButton("No", null)
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        addSellLoad(soldLoadInfo, null);
+                    }
+                })
                 .show();
     }
 
@@ -406,9 +411,11 @@ public class SellLoadActivity extends AppCompatActivity
             MyUtility.setTextViewValue(m_balanceView, soldLoadInfo.mBalance); // add deposited amount to current balance
             m_currentBalance = soldLoadInfo.mBalance;
 
-            String loadMessage = MyUtility.createSellLoadFormat(soldLoadInfo.mProduct, pinNumber, soldLoadInfo.mNumber);
+            if(pinNumber != null) {
+                String loadMessage = MyUtility.createSellLoadFormat(soldLoadInfo.mProduct, pinNumber, soldLoadInfo.mNumber);
 
-            chooseFromAccessNumbers(loadMessage);
+                chooseFromAccessNumbers(loadMessage);
+            }
         }
 
         MyUtility.showToast(this, insertMessage, MyUtility.ToastLength.LONG);
