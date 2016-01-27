@@ -1,9 +1,6 @@
 package com.example.stevenpila.loadcentraldiary;
 
 import android.content.Context;
-import android.graphics.Typeface;
-import android.provider.ContactsContract;
-import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,8 +8,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Filter;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -34,6 +29,11 @@ public class TransactionRecordListViewAdapter extends ArrayAdapter<TransactionRe
     public TransactionRecordListViewAdapter(Context context, ArrayList<TransactionRecordInfo> transactionRecordInfos) {
         super(context, 0, transactionRecordInfos);
 
+        if(transactionRecordInfos.isEmpty()) {
+            MyUtility.logMessage("Transaction record history is empty.");
+            transactionRecordInfos.add(new TransactionRecordInfo(true));
+        }
+
         mTransactionRecordInfos = transactionRecordInfos;
         mCurrentTransactionRecordInfos = new ArrayList<>(transactionRecordInfos);
         mCurrentTransactionRecordInfosBackup = new ArrayList<>(transactionRecordInfos);
@@ -42,6 +42,14 @@ public class TransactionRecordListViewAdapter extends ArrayAdapter<TransactionRe
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         TransactionRecordInfo transactionRecordInfo = mCurrentTransactionRecordInfos.get(position);
+
+        if(transactionRecordInfo.mIsSearchEmpty) {  // search result is empty
+            convertView =  LayoutInflater.from(getContext()).inflate(R.layout.list_view_item_not_available, parent, false);
+            ((TextView) convertView.findViewById(R.id.listViewItemNotAvailable)).setText("No Transaction(s) Available");
+
+            return convertView;
+        }
+
         convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_view_item_home_sell_load, parent, false);
 
         if(stripeIndicator++ % 2 == 0)
@@ -61,7 +69,7 @@ public class TransactionRecordListViewAdapter extends ArrayAdapter<TransactionRe
         ImageView paidIV = (ImageView) convertView.findViewById(R.id.listViewItemHomeSellLoadPaidIV);
         ImageView infoIV = (ImageView) convertView.findViewById(R.id.listViewItemHomeSellLoadInfoIV);
 
-        if(transactionRecordInfo.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD)) {
+        if(transactionRecordInfo.mTableName.equals(DatabaseHandler.TABLE_SELL_LOAD)) { // sell load record
             productTV.setText(transactionRecordInfo.mSoldLoadInfo.mProduct);   // set product code
             numberTV.setText(transactionRecordInfo.mSoldLoadInfo.mNumber);     // set number of client
             dateTimeTV.setText(MyUtility.getDate(transactionRecordInfo.mSoldLoadInfo.mDatetime));  // set datetime of transaction
@@ -79,7 +87,7 @@ public class TransactionRecordListViewAdapter extends ArrayAdapter<TransactionRe
             else
                 infoIV.setBackgroundColor(getContext().getResources().getColor(R.color.colorRed));
         }
-        else if(transactionRecordInfo.mTableName.equals(DatabaseHandler.TABLE_DEPOSIT)) {
+        else if(transactionRecordInfo.mTableName.equals(DatabaseHandler.TABLE_DEPOSIT)) {   // deposit record
             productTV.setText(HomeActivity.DEPOSIT);    // set product to DEPOSIT
             numberTV.setHint("");   // remove hint since it will display Number
             dateTimeTV.setText(MyUtility.getDate(transactionRecordInfo.mDepositInfo.mDatetime));  // set datetime of deposit
@@ -110,7 +118,7 @@ public class TransactionRecordListViewAdapter extends ArrayAdapter<TransactionRe
             @Override
             protected FilterResults performFiltering(CharSequence constraint) {
                 FilterResults filterResults = new FilterResults();
-                if(constraint != null) {
+                if(constraint != null && !(mTransactionRecordInfos.get(0).mIsSearchEmpty)) {
                     ArrayList<TransactionRecordInfo> results = getArrayListBySubString(constraint.toString().toLowerCase());
                     filterResults.count = results.size();
                     filterResults.values = results;
@@ -144,10 +152,16 @@ public class TransactionRecordListViewAdapter extends ArrayAdapter<TransactionRe
                     results.add(item);
         }
 
+        if(results.isEmpty())
+            results.add(new TransactionRecordInfo(true));
+
         return results;
     }
 
     public void setArrayListByPaidStatus(int position) {
+        if((mTransactionRecordInfos.get(0)).mIsSearchEmpty)
+            return;
+
         mCurrentShowPaidUnpaid = position;
 
         setArrayListByDateRange(mCurrentDateRange, mDateFromto);
@@ -157,6 +171,9 @@ public class TransactionRecordListViewAdapter extends ArrayAdapter<TransactionRe
         setArrayListByDateRange(position, null);
     }
     public void setArrayListByDateRange(int position, MyUtility.Pair<String, String> dateFromto) {
+        if((mTransactionRecordInfos.get(0)).mIsSearchEmpty)
+            return;
+
         ArrayList<TransactionRecordInfo> results = new ArrayList<>();
         int lastNumMonths = 0, lastNumYear = 0;
 
@@ -256,6 +273,9 @@ public class TransactionRecordListViewAdapter extends ArrayAdapter<TransactionRe
                 }
             }
         }
+
+        if(results.isEmpty())
+            results.add(new TransactionRecordInfo(true));
 
         if(!results.isEmpty()) {
             mCurrentDateRange = position;

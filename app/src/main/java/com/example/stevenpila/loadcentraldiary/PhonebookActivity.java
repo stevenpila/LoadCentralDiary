@@ -32,12 +32,10 @@ public class PhonebookActivity extends AppCompatActivity
 
     private ListView m_listView;
     private EditText m_searchTxt;
-//    private NavigationView m_navigationView;
 
     private double m_currentBalance;
 
     private DatabaseHandler m_dbHandler;
-    PhonebookListViewAdapter m_phonebookListViewAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -192,31 +190,26 @@ public class PhonebookActivity extends AppCompatActivity
         ArrayList<PhonebookInfo> arrayOfPhonebookInfo = m_dbHandler.getPhonebookList();
 
         // adding items to list view...
-        if(!arrayOfPhonebookInfo.isEmpty()) {
-            m_phonebookListViewAdapter = new PhonebookListViewAdapter(this, arrayOfPhonebookInfo);
-            m_listView.setAdapter(m_phonebookListViewAdapter);
-            registerForContextMenu(m_listView); // triggered by long-pressed click
+        PhonebookListViewAdapter phonebookListViewAdapter = new PhonebookListViewAdapter(this, arrayOfPhonebookInfo);
+        m_listView.setAdapter(phonebookListViewAdapter);
+        registerForContextMenu(m_listView); // triggered by long-pressed click
 
-            m_searchTxt.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        m_searchTxt.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
-                }
+            }
 
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    m_phonebookListViewAdapter.getFilter().filter(s);
-                }
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                ((PhonebookListViewAdapter) m_listView.getAdapter()).getFilter().filter(s);
+            }
 
-                @Override
-                public void afterTextChanged(Editable s) {
+            @Override
+            public void afterTextChanged(Editable s) {
 
-                }
-            });
-        }
-        else {
-            MyUtility.showToast(this, "Phonebook is empty.", MyUtility.ToastLength.LONG);
-        }
+            }
+        });
     }
 
     private void confirmDialog(final PhonebookInfo phonebookInfo, final int position) {
@@ -232,8 +225,10 @@ public class PhonebookActivity extends AppCompatActivity
 
                         if(m_dbHandler.deletePhonebook(phonebookInfo.m_id)) {
                             messageStr = "Successfully deleted \"" + phonebookInfo.m_name + "\".";
-                            m_phonebookListViewAdapter.remove(m_phonebookListViewAdapter.getItem(position));
-                            m_phonebookListViewAdapter.notifyDataSetChanged();
+                            PhonebookListViewAdapter phonebookListViewAdapter = (PhonebookListViewAdapter) m_listView.getAdapter();
+                            phonebookListViewAdapter.remove(phonebookListViewAdapter.getItem(position));
+                            phonebookListViewAdapter.notifyDataSetChanged();
+                            MyUtility.logMessage("position: " + position + ", adapter size: " + phonebookListViewAdapter.getCount());
                         }
                         else
                             messageStr = "Failed to delete \"" + phonebookInfo.m_name + "\".";

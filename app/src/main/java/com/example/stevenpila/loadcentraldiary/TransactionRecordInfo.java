@@ -10,6 +10,12 @@ public class TransactionRecordInfo {
     public String mTableName;
     public double mBalance;
 
+    public boolean mIsSearchEmpty = false;
+
+    public TransactionRecordInfo(boolean isSearchEmpty) {
+        mIsSearchEmpty = isSearchEmpty;
+    }
+
     public TransactionRecordInfo(int id, String tableName, double balance, SoldLoadInfo soldLoadInfo) {
         mId = id;
         mTableName = tableName;

@@ -150,8 +150,10 @@ public class HomeActivity extends AppCompatActivity
                 if(isPaid)  // hide Paid button if sell load record is already paid
                     menu.findItem(R.id.paidItem).setVisible(false);
             }
-            else if(transactionRecordInfo.mTableName.equals(DatabaseHandler.TABLE_DEPOSIT)) // hide Paid button if deposit record
+            else if(transactionRecordInfo.mTableName.equals(DatabaseHandler.TABLE_DEPOSIT)) { // hide Paid button if deposit record
                 menu.findItem(R.id.paidItem).setVisible(false);
+                menu.findItem(R.id.detailsItem).setVisible(false);
+            }
         }
     }
 

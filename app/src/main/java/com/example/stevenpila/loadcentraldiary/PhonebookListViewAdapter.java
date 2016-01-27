@@ -20,6 +20,11 @@ public class PhonebookListViewAdapter extends ArrayAdapter<PhonebookInfo> {
     public PhonebookListViewAdapter(Context context, ArrayList<PhonebookInfo> phonebookInfos) {
         super(context, 0, phonebookInfos);
 
+        if(phonebookInfos.isEmpty()) {
+            MyUtility.logMessage("Phonebook is empty.");
+            phonebookInfos.add(new PhonebookInfo(true));
+        }
+
         m_phonebookInfoFullList = phonebookInfos;
         m_phonebookInfoCurrenList = new ArrayList<>(m_phonebookInfoFullList);
     }
@@ -28,8 +33,14 @@ public class PhonebookListViewAdapter extends ArrayAdapter<PhonebookInfo> {
     public View getView(int position, View convertView, ViewGroup parent) {
         PhonebookInfo phonebookInfo = m_phonebookInfoCurrenList.get(position);
 
-        if(convertView == null)
-            convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_view_item_phonebook, parent, false);
+        if(phonebookInfo.mIsSearchEmpty) {  // search result is empty
+            convertView =  LayoutInflater.from(getContext()).inflate(R.layout.list_view_item_not_available, parent, false);
+            ((TextView) convertView.findViewById(R.id.listViewItemNotAvailable)).setText("No Contact(s) Available");
+
+            return convertView;
+        }
+
+        convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_view_item_phonebook, parent, false);
 
         TextView text1 = (TextView) convertView.findViewById(R.id.phonebookNameTextView);
         TextView text2 = (TextView) convertView.findViewById(R.id.phonebookNumberTextView);
@@ -51,12 +62,17 @@ public class PhonebookListViewAdapter extends ArrayAdapter<PhonebookInfo> {
     }
 
     @Override
+    public void remove(PhonebookInfo object) {
+        m_phonebookInfoCurrenList.remove(object);
+    }
+
+    @Override
     public Filter getFilter() {
         return new Filter() {
             @Override
             protected FilterResults performFiltering(CharSequence constraint) {
                 FilterResults filterResults = new FilterResults();
-                if(constraint != null) {
+                if(constraint != null && !(m_phonebookInfoFullList.get(0)).mIsSearchEmpty) {
                     ArrayList<PhonebookInfo> results = getResults(constraint.toString().toLowerCase()); // get a list of results based from constraint...
                     filterResults.count = results.size();
                     filterResults.values = results;
@@ -85,6 +101,9 @@ public class PhonebookListViewAdapter extends ArrayAdapter<PhonebookInfo> {
                 results.add(item);
             }
         }
+
+        if(results.isEmpty())
+            results.add(new PhonebookInfo(true));
 
         return results;
     }

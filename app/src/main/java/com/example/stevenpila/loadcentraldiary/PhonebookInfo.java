@@ -8,6 +8,12 @@ public class PhonebookInfo {
     public String m_name;
     public String m_number;
 
+    public boolean mIsSearchEmpty = false;
+
+    public PhonebookInfo(boolean isSearchEmpty) {
+        mIsSearchEmpty = isSearchEmpty;
+    }
+
     public PhonebookInfo(int id, String name, String number) {
         m_id = id;
         m_name = name;

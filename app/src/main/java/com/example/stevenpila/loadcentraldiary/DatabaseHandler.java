@@ -303,10 +303,12 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         }
     }
 
-    public double getDiscountIfProductCodeExist(String product_code) {
-        double discount = -1;
+    public MyUtility.Pair<Integer, Double> getDiscountIfProductCodeExist(String product_code) {
+        MyUtility.Pair<Integer, Double> pairIdDiscount = new MyUtility.Pair<>(-1, -1.0);
 
-        String selectQuery = "SELECT " + PRODUCT_CODE_COLUMN_DISCOUNT + " FROM " +
+        String selectQuery = "SELECT " +
+                PRODUCT_CODE_COLUMN_ID + ", " +
+                PRODUCT_CODE_COLUMN_DISCOUNT + " FROM " +
                 TABLE_PRODUCT_CODE + " WHERE " +
                 PRODUCT_CODE_COLUMN_CODE + "='" + product_code + "' LIMIT 1";
         SQLiteDatabase db = this.getReadableDatabase();
@@ -314,14 +316,15 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
         if(cursor.moveToFirst()) {
             cursor.moveToFirst();
-            discount = cursor.getDouble(cursor.getColumnIndex(PRODUCT_CODE_COLUMN_DISCOUNT));
+            pairIdDiscount.m_first = cursor.getInt(cursor.getColumnIndex(PRODUCT_CODE_COLUMN_ID));
+            pairIdDiscount.m_second = cursor.getDouble(cursor.getColumnIndex(PRODUCT_CODE_COLUMN_DISCOUNT));
             cursor.close();
         }
 
         cursor.close();
         db.close();
 
-        return discount;
+        return pairIdDiscount;
     }
 
     public ArrayList<ProductCodeInfo> getProductCodeList() {

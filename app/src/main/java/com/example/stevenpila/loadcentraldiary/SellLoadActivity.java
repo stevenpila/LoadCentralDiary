@@ -257,17 +257,17 @@ public class SellLoadActivity extends AppCompatActivity
                 MyUtility.showToast(this, "Amount (" + ProductAndAmount.m_second + ") is too low/high." , MyUtility.ToastLength.LONG);
                 return;
             }
-            double productDiscount;
-            if((productDiscount = m_dbHandler.getDiscountIfProductCodeExist(tempProductStr)) > -1) {
+            MyUtility.Pair<Integer, Double> productDiscount;
+            if((productDiscount = m_dbHandler.getDiscountIfProductCodeExist(tempProductStr)).m_first > -1) {
                 if(tempDiscount > -1)
-                    productDiscount = tempDiscount;
+                    productDiscount.m_second = tempDiscount;
 
-                double discountedAmount = MyUtility.roundOff((ProductAndAmount.m_second * productDiscount) / 100, 2);
+                double discountedAmount = MyUtility.roundOff((ProductAndAmount.m_second * productDiscount.m_second) / 100, 2);
                 double totalDiscountedAmount = ProductAndAmount.m_second - discountedAmount;
                 double actualBalance = Double.parseDouble(MyUtility.setDecimalPlaces(2, m_currentBalance - totalDiscountedAmount));
 
                 if(m_currentBalance >= totalDiscountedAmount) {
-                    SoldLoadInfo soldLoadInfo = new SoldLoadInfo(-1, productStr, totalDiscountedAmount, numberStr, dateTimeStr, userBalance, descStr, m_isPaid); // TODO - userBalance or actualBalance?
+                    SoldLoadInfo soldLoadInfo = new SoldLoadInfo(productDiscount.m_first, productStr, totalDiscountedAmount, numberStr, dateTimeStr, userBalance, descStr, m_isPaid); // TODO - userBalance or actualBalance?
                     confirmSellLoadInfoDialog(soldLoadInfo, userBalance, actualBalance);
                 }
                 else {
@@ -400,7 +400,8 @@ public class SellLoadActivity extends AppCompatActivity
     }
 
     private void addSellLoad(SoldLoadInfo soldLoadInfo, String pinNumber) {
-        long newId = m_dbHandler.addSellLoad(1, soldLoadInfo.mDatetime, soldLoadInfo.mNumber, soldLoadInfo.mProduct, soldLoadInfo.mAmount, soldLoadInfo.mBalance, soldLoadInfo.mDescription, soldLoadInfo.mIsPaid);
+        // soldLoadInfo.mId = product_code id in db
+        long newId = m_dbHandler.addSellLoad(soldLoadInfo.mId, soldLoadInfo.mDatetime, soldLoadInfo.mNumber, soldLoadInfo.mProduct, soldLoadInfo.mAmount, soldLoadInfo.mBalance, soldLoadInfo.mDescription, soldLoadInfo.mIsPaid);
         String insertMessage;
 
         if(newId < 0) // add new sell load failed
@@ -551,14 +552,14 @@ public class SellLoadActivity extends AppCompatActivity
                     m_productTxt.setError(true);
                     return;
                 }
-                double productDiscount;
-                if((productDiscount = m_dbHandler.getDiscountIfProductCodeExist(productStr)) > -1) {
+                MyUtility.Pair<Integer, Double> productDiscount;
+                if((productDiscount = m_dbHandler.getDiscountIfProductCodeExist(productStr)).m_first > -1) {
                     if(tempDiscount > -1)
-                        productDiscount = tempDiscount;
+                        productDiscount.m_second = tempDiscount;
 
-                    MyUtility.showToast(this, "Product: " + productStr + " Discount: " + productDiscount, MyUtility.ToastLength.LONG);
+                    MyUtility.showToast(this, "Product: " + productStr + " Discount: " + productDiscount.m_second, MyUtility.ToastLength.LONG);
 
-                    double discountedAmount = MyUtility.roundOff((ProductAndAmount.m_second * productDiscount) / 100, 2);
+                    double discountedAmount = MyUtility.roundOff((ProductAndAmount.m_second * productDiscount.m_second) / 100, 2);
                     double totalDiscountedAmount = MyUtility.roundOff(ProductAndAmount.m_second - discountedAmount, 2);
                     double newBalance = MyUtility.roundOff(m_currentBalance - totalDiscountedAmount, 2);
 
